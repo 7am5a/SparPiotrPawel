@@ -18,7 +18,7 @@ esp_err_t motor_set_speed(float speed);
 /**
  * @brief Stops the motor
  */
-void motor_pump_stop (void);
+void motor_stop (void);
 
 /**
  * @brief Returns motor speed
