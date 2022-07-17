@@ -12,7 +12,7 @@ void test_task_pwm (void *pvParameter)
     uint8_t BDC_MCPWM_DUTY = 0;
     while (1)
     {
-            cooling_pump_set_speed(BDC_MCPWM_DUTY);
+            motor_set_speed(BDC_MCPWM_DUTY);
             BDC_MCPWM_DUTY++;
             vTaskDelay(50/ portTICK_RATE_MS);
             BDC_MCPWM_DUTY %= 100;
