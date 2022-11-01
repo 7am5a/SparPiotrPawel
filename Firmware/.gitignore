@@ -1,5 +1,0 @@
-build/
-components/
-.devcontainer
-.vscode
-sdkconfig.*
