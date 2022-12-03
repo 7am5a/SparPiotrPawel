@@ -7,8 +7,8 @@
 #include "driver/mcpwm.h"
 #include "motor_control.h"
 
-#define MOTOR_PWM_OUTPUT_PIN 16
-#define MOTOR_PUMP_PWM_FREQ_HZ 25000
+#define MOTOR_PWM_OUTPUT_PIN 16u
+#define MOTOR_PWM_FREQ_HZ 1000u
 
 static float motor_speed;
 
@@ -16,7 +16,7 @@ void motor_control_task(void *pvParameter)
 {
     mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM0A, MOTOR_PWM_OUTPUT_PIN);
     mcpwm_config_t pwm_config = {
-        .frequency = MOTOR_PUMP_PWM_FREQ_HZ,
+        .frequency = MOTOR_PWM_FREQ_HZ,
         .cmpr_a = 0,
         .cmpr_b = 0,
         .counter_mode = MCPWM_UP_COUNTER,
@@ -26,7 +26,7 @@ void motor_control_task(void *pvParameter)
     mcpwm_set_duty(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A, 0.0f);
     while (1)
     {
-        /* left blank deliberately */
+        vTaskDelay(100/ portTICK_RATE_MS);
     }
 }
 
