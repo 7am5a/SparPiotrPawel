@@ -24,6 +24,8 @@
 #include "freertos/task.h"
 #include "driver/gpio.h"
 #include "sdkconfig.h"
+#include <string.h>
+#include "mpu6050.h"
 
 static const char *TAG = "i2c-simple-example";
 
@@ -40,31 +42,6 @@ static const char *TAG = "i2c-simple-example";
 
 #define MPU6050_PWR_MGMT_1_REG_ADDR         0x6B        /*!< Register addresses of the power managment register */
 #define MPU6050_RESET_BIT                   7
-
-uint16_t accel[3] = {0, 0, 0};
-uint16_t gyro[3] = {0, 0, 0};
-uint16_t temp;
-
-/**
- * @brief Read a sequence of bytes from a MPU6050 sensor registers
- */
-static esp_err_t mpu6050_register_read(uint8_t reg_addr, uint8_t *data, size_t len)
-{
-    return i2c_master_write_read_device(I2C_MASTER_NUM, MPU6050_SENSOR_ADDR, &reg_addr, 1, data, len, I2C_MASTER_TIMEOUT_MS / portTICK_RATE_MS);
-}
-
-/**
- * @brief Write a byte to a MPU6050 sensor register
- */
-static esp_err_t mpu6050_register_write_byte(uint8_t reg_addr, uint8_t data)
-{
-    int ret;
-    uint8_t write_buf[2] = {reg_addr, data};
-
-    ret = i2c_master_write_to_device(I2C_MASTER_NUM, MPU6050_SENSOR_ADDR, write_buf, sizeof(write_buf), I2C_MASTER_TIMEOUT_MS / portTICK_RATE_MS);
-
-    return ret;
-}
 
 /**
  * @brief i2c master initialization
@@ -90,114 +67,69 @@ static esp_err_t i2c_master_init(void)
 
 void app_main(void)
 {
-    uint8_t data[2];
-    uint16_t accel[3] = {0, 0, 0};
-    uint16_t gyro[3] = {0, 0, 0};
-    uint16_t temp;
+    mpu6050_acceleration_t accel = {0};
+    mpu6050_rotation_t gyro = {0};
+    float temp;
     esp_err_t ret = ESP_OK;
+
+    uint8_t gyro_scale = 0;
+    uint8_t accel_scale = 0;
+    float gyro_res = 0;
+    float accel_res = 0;
 
     ESP_ERROR_CHECK(i2c_master_init());
     ESP_LOGI(TAG, "I2C initialized successfully");
 
-    /* Read the MPU6050 WHO_AM_I register, on power up the register should have the value 0x68 */
-    ESP_ERROR_CHECK(mpu6050_register_read(MPU6050_WHO_AM_I_REG_ADDR, data, 1));
-    ESP_LOGI(TAG, "WHO_AM_I = %X", data[0]);
+    mpu6050_init();
+
+    ret = mpu6050_test_connection();
+
+     if(ret == true)
+    {
+        ESP_LOGI(TAG,"Connection test OK");
+    }
+    else
+    {
+        ESP_LOGE(TAG,"MPU6050 odpierdala kosiarę");
+    }
+
+    gyro_scale = mpu6050_get_full_scale_gyro_range();
+    accel_scale = mpu6050_get_full_scale_accel_range();
+    printf("gyro range: %i\naccel range: %i\n", gyro_scale, accel_scale);
+
+    gyro_res = mpu6050_get_gyro_res(gyro_scale);
+    accel_res = mpu6050_get_accel_res(accel_scale);
+    printf("gyro resolution: %f\naccel resolution: %f\n", gyro_res, accel_res);
 
     while(1)
     {
-        ret = mpu6050_read_raw(accel, gyro, &temp);
-        if(ret != ESP_OK)
-        {
-            ESP_LOGE(TAG,"Read raw error");
-        }
-        else
-        {
-            printf("accel1: %d, accel2: %d, accel3: %d\n\r"
-                "gyro1: %d, gyro2: %d, gyro3: %d\n\r"
-                "temp: %d\n\n",
-                accel[0], accel[1], accel[2],
-                gyro[0], gyro[1], gyro[2],
-                temp);
-        }
+
+        temp = (((float)mpu6050_get_temperature())/340.0f) + 36.53f;
+
+        mpu6050_get_motion(&accel, &gyro);
+
+        printf("temp: %f\n", temp);
+        printf("x: %i\n", accel.accel_x);
+        printf("y: %i\n", accel.accel_y);
+        printf("z: %i\n", accel.accel_z);
+
+        printf("x: %i\n", gyro.gyro_x);
+        printf("y: %i\n", gyro.gyro_y);
+        printf("z: %i\n", gyro.gyro_z);
+        // ret = mpu6050_read_raw(accel, gyro, &temp);
+        // if(ret != ESP_OK)
+        // {
+        //     ESP_LOGE(TAG,"Read raw error");
+        // }
+        // else
+        // {
+        //     printf("accel1: %d, accel2: %d, accel3: %d\n\r"
+        //         "gyro1: %d, gyro2: %d, gyro3: %d\n\r"
+        //         "temp: %d\n\n",
+        //         accel[0], accel[1], accel[2],
+        //         gyro[0], gyro[1], gyro[2],
+        //         temp);
+        // }
         vTaskDelay(1000/ portTICK_RATE_MS);
     }
-    
-    /* Demonstrate writing by reseting the MPU6050 */
-    // ESP_ERROR_CHECK(mpu6050_register_write_byte(MPU6050_PWR_MGMT_1_REG_ADDR, 1 << MPU6050_RESET_BIT));
-
-    // ESP_ERROR_CHECK(i2c_driver_delete(I2C_MASTER_NUM));
-    // ESP_LOGI(TAG, "I2C unitialized successfully");
-}
-
-
-// esp_err_t mpu6050_reset()
-// {
-//     esp_err_t ret = ESP_OK;
-//     ret = mpu6050_register_write_byte(0x6B, 0x00);
-//     if(ret != ESP_OK)
-//     {
-
-//     }
-// }
-
-esp_err_t mpu6050_read_raw (uint16_t accel[3], uint16_t gyro[3], uint16_t *temp)
-{
-    esp_err_t ret = ESP_OK;
-    uint8_t buffer[6];
-    uint8_t val = 0x3B;
-
-    ret = mpu6050_register_write_byte(MPU6050_SENSOR_ADDR, val);
-    if(ret != ESP_OK)
-    {   
-        ESP_LOGE(TAG,"MPU6050 write byte error %x", val);
-        return ret;
-    }
-    ret = mpu6050_register_read(MPU6050_SENSOR_ADDR, buffer, 6);
-    if(ret != ESP_OK)
-    {   
-        ESP_LOGE(TAG,"MPU6050 read byte error %x", val);
-        return ret;
-    }
-
-    for (int i = 0; i < 3; i++) {
-        accel[i] = (buffer[i * 2] << 8 | buffer[(i * 2) + 1]);
-    }
-
-    val = 0x43;
-
-    ret = mpu6050_register_write_byte(MPU6050_SENSOR_ADDR, val);
-    if(ret != ESP_OK)
-    {   
-        ESP_LOGE(TAG,"MPU6050 write byte error %x", val);
-        return ret;
-    }
-    ret = mpu6050_register_read(MPU6050_SENSOR_ADDR, buffer, 6);
-    if(ret != ESP_OK)
-    {   
-        ESP_LOGE(TAG,"MPU6050 read byte error %x", val);
-        return ret;
-    }
-
-    for (int i = 0; i < 3; i++) {
-        gyro[i] = (buffer[i * 2] << 8 | buffer[(i * 2) + 1]);;
-    }
-
-    val = 0x41;
-
-    ret = mpu6050_register_write_byte(MPU6050_SENSOR_ADDR, val);
-    if(ret != ESP_OK)
-    {   
-        ESP_LOGE(TAG,"MPU6050 write byte error %x", val);
-        return ret;
-    }
-    ret = mpu6050_register_read(MPU6050_SENSOR_ADDR, buffer, 6);
-    if(ret != ESP_OK)
-    {   
-        ESP_LOGE(TAG,"MPU6050 read byte error %x", val);
-        return ret;
-    }
-
-    *temp = buffer[0] << 8 | buffer[1];
-
-    return ret;
 }
