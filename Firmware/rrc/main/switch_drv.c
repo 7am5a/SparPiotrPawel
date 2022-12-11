@@ -47,7 +47,7 @@ void init_gpio_sw()
 void install_gpio_sw()
 {
     //Install ISR driver
-    //gpio_install_isr_service(0); //- not required - one instal is in adc_drv.c and it is later called, with this uncomment call warning about one extra installation
+    gpio_install_isr_service(0); 
     
     //Attach ISR to each switch
     gpio_isr_handler_add(SW1, switch_isr_handler, (void*)SW1);
@@ -80,7 +80,7 @@ void switch_task()
         if(!gpio_get_level(pin_num))
             {                
                 //printf("GPIO[%d] intr, val: %d, pressed: %d\n", pin_num, gpio_get_level(pin_num), counter++);
-                vTaskDelay(20 / portTICK_RATE_MS);
+                vTaskDelay(40 / portTICK_RATE_MS);
                 pin_num = 0;
             }
             
