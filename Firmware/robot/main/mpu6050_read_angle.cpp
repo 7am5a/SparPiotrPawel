@@ -12,6 +12,8 @@
 #include "MPU6050.h"
 #include "MPU6050_6Axis_MotionApps20.h"
 #include "sdkconfig.h"
+#include "motor_control.h"
+#include "mpu6050_read_angle.h"
 
 #define PIN_SDA 21
 #define PIN_CLK 22
@@ -23,6 +25,11 @@ uint16_t packetSize = 42;    // expected DMP packet size (default is 42 bytes)
 uint16_t fifoCount;     // count of all bytes currently in FIFO
 uint8_t fifoBuffer[64]; // FIFO storage buffer
 uint8_t mpuIntStatus;   // holds actual interrupt status byte from MPU
+float pitch = 0u;
+bool calibrated = 0u;
+
+
+MPU6050 mpu = MPU6050();
 
 void task_initI2C(void *ignore) {
 	i2c_config_t conf;
@@ -37,8 +44,33 @@ void task_initI2C(void *ignore) {
 	vTaskDelete(NULL);
 }
 
+float mpu6050_read_angle()
+{
+	mpuIntStatus = mpu.getIntStatus();
+	// get current FIFO count
+	fifoCount = mpu.getFIFOCount();
+	if ((mpuIntStatus & 0x10) || fifoCount == 1024) {
+	    // reset so we can continue cleanly
+	    mpu.resetFIFO();
+	// otherwise, check for DMP data ready interrupt frequently)
+	} else if (mpuIntStatus & 0x02) {
+	    // wait for correct available data length, should be a VERY short wait
+	    while (fifoCount < packetSize) fifoCount = mpu.getFIFOCount();
+	    // read a packet from FIFO
+	    mpu.getFIFOBytes(fifoBuffer, packetSize);
+		mpu.dmpGetQuaternion(&q, fifoBuffer);
+		mpu.dmpGetGravity(&gravity, &q);
+		mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
+		printf("YAW: %3.1f, ", ypr[0] * 180/M_PI);
+		printf("PITCH: %3.1f, ", ypr[1] * 180/M_PI);
+		printf("ROLL: %3.1f \n", ypr[2] * 180/M_PI);
+		pitch = ypr[1] * 180/M_PI;
+	}
+
+	return pitch;
+}
+
 void task_display(void*){
-	MPU6050 mpu = MPU6050();
 	mpu.initialize();
 	mpu.dmpInitialize();
 
@@ -51,37 +83,16 @@ void task_display(void*){
     mpu.CalibrateGyro(6);
 
 	mpu.setDMPEnabled(true);
+	calibrated = 1;
 
 	while(1){
-	    mpuIntStatus = mpu.getIntStatus();
-		// get current FIFO count
-		fifoCount = mpu.getFIFOCount();
-
-	    if ((mpuIntStatus & 0x10) || fifoCount == 1024) {
-	        // reset so we can continue cleanly
-	        mpu.resetFIFO();
-
-	    // otherwise, check for DMP data ready interrupt frequently)
-	    } else if (mpuIntStatus & 0x02) {
-	        // wait for correct available data length, should be a VERY short wait
-	        while (fifoCount < packetSize) fifoCount = mpu.getFIFOCount();
-
-	        // read a packet from FIFO
-
-	        mpu.getFIFOBytes(fifoBuffer, packetSize);
-	 		mpu.dmpGetQuaternion(&q, fifoBuffer);
-			mpu.dmpGetGravity(&gravity, &q);
-			mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
-			printf("YAW: %3.1f, ", ypr[0] * 180/M_PI);
-			printf("PITCH: %3.1f, ", ypr[1] * 180/M_PI);
-			printf("ROLL: %3.1f \n", ypr[2] * 180/M_PI);
-	    }
-
+	
+		vTaskDelay(50/portTICK_PERIOD_MS);
 	    //Best result is to match with DMP refresh rate
 	    // Its last value in components/MPU6050/MPU6050_6Axis_MotionApps20.h file line 310
-	    // Now its 0x13, which means DMP is refreshed with 10Hz rate
+	    // Now its 0x13, which means DMP is refreshed with 10Hz rat]e
 		// vTaskDelay(5/portTICK_PERIOD_MS);
 	}
 
 	vTaskDelete(NULL);
-}
+	}
