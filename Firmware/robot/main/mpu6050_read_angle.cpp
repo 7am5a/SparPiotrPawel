@@ -14,6 +14,9 @@
 #include "sdkconfig.h"
 #include "motor_control.h"
 #include "mpu6050_read_angle.h"
+#include "esp_now_drv.h"
+#include "esp_wifi.h"
+#include "esp_now.h"
 
 #define PIN_SDA 21
 #define PIN_CLK 22
@@ -27,6 +30,7 @@ uint8_t fifoBuffer[64]; // FIFO storage buffer
 uint8_t mpuIntStatus;   // holds actual interrupt status byte from MPU
 float pitch = 0u;
 bool calibrated = 0u;
+float send_pitch;
 
 
 MPU6050 mpu = MPU6050();
@@ -41,6 +45,7 @@ void task_initI2C(void *ignore) {
 	conf.master.clk_speed = 400000;
 	ESP_ERROR_CHECK(i2c_param_config(I2C_NUM_0, &conf));
 	ESP_ERROR_CHECK(i2c_driver_install(I2C_NUM_0, I2C_MODE_MASTER, 0, 0, 0));
+	init_esp_now();
 	vTaskDelete(NULL);
 }
 
@@ -61,10 +66,15 @@ float mpu6050_read_angle()
 		mpu.dmpGetQuaternion(&q, fifoBuffer);
 		mpu.dmpGetGravity(&gravity, &q);
 		mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
-		printf("YAW: %3.1f, ", ypr[0] * 180/M_PI);
-		printf("PITCH: %3.1f, ", ypr[1] * 180/M_PI);
-		printf("ROLL: %3.1f \n", ypr[2] * 180/M_PI);
+		//printf("YAW: %3.1f, ", ypr[0] * 180/M_PI);
+		//printf("PITCH: %3.1f, ", ypr[1] * 180/M_PI);
+		//printf("ROLL: %3.1f \n", ypr[2] * 180/M_PI);
 		pitch = ypr[1] * 180/M_PI;
+		
+		/*uncomment to send current angle via ESP_NOW*/
+		// send_pitch = pitch;
+		// printf("send_pitch: %0.2f\n",send_pitch);
+		// esp_now_send(NULL, (uint8_t *)&send_pitch, sizeof(send_pitch));  
 	}
 
 	return pitch;

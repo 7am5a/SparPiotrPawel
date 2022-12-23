@@ -1,4 +1,6 @@
-idf_component_register(SRCS "pid.cpp" 
+idf_component_register(SRCS "Encoder.cpp" 
+                            "esp_now_drv.cpp"
+                            "pid.cpp" 
                             "mpu6050_read_angle.cpp" 
                             "main.cpp" 
                             "MPU6050.cpp" 
