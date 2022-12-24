@@ -176,7 +176,7 @@ esp_err_t motor_set_speed(uint8_t motor, float speed)
             mcpwm_set_duty(MCPWM_UNIT_1, MCPWM_TIMER_0, MCPWM_OPR_A, 0.0f);
             mcpwm_set_duty(MCPWM_UNIT_1, MCPWM_TIMER_0, MCPWM_OPR_B, speed);
         }
-        ESP_LOGI("","speed: %0.2f\n", speed);
+        //ESP_LOGI("","speed: %0.2f\n", speed);
         motor_PWM = speed;
         ret_val = ESP_OK;
     }
@@ -200,7 +200,7 @@ esp_err_t motor_set_speed(uint8_t motor, float speed)
             mcpwm_set_duty(MCPWM_UNIT_1, MCPWM_TIMER_0, MCPWM_OPR_B, 0.0f);
         }
 
-        ESP_LOGI("","speed: %0.2f\n", speed);
+        //ESP_LOGI("","speed: %0.2f\n", speed);
         motor_PWM = speed;
         ret_val = ESP_OK;
     }

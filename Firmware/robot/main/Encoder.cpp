@@ -5,6 +5,8 @@
 #include "driver/ledc.h"
 #include "driver/gpio.h"
 #include "driver/pcnt.h"
+#include "driver/timer.h"
+#include "freertos/semphr.h"
 #include "esp_attr.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
@@ -12,8 +14,23 @@
 #include "sdkconfig.h"
 #include <stdint.h>
 #include "Encoder.h"
+#include "esp_err.h"
 
 #include <limits>
+
+#define PULSES_PER_MOTOR_REVOLUTION 28
+#define GEAR_RATIO 20
+#define PULSES_PER_WHEEL_REVOLUTION (PULSES_PER_MOTOR_REVOLUTION * GEAR_RATIO)
+
+#define TIMER_DIVIDER 100u
+
+static uint64_t last_timer_val;
+static int32_t last_encoder_val;
+static int32_t curr_encoder_val;
+static float last_speed;
+
+
+portMUX_TYPE myMutex = portMUX_INITIALIZER_UNLOCKED;
 
 Encoder::Encoder(gpio_num_t gpioPinA, gpio_num_t gpioPinB, pcnt_unit_t pcntUnit) {
 	this->gpioPinA = gpioPinA;
@@ -92,9 +109,39 @@ void encoder_task(void *pvParameter)
     Encoder encoder(GPIO_NUM_34, GPIO_NUM_35);
 
     encoder.init();
+     //Timer----------------------------------------------
+    timer_config_t config = { 
+        .alarm_en = TIMER_ALARM_EN,
+        .counter_en = TIMER_PAUSE,
+        .counter_dir = TIMER_COUNT_UP,
+        .auto_reload = TIMER_AUTORELOAD_EN,
+        .divider = TIMER_DIVIDER
+    };
+
+    timer_init(TIMER_GROUP_0, TIMER_0, &config);
+    timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0);
+    timer_start(TIMER_GROUP_0, TIMER_0);
+    //End timer------------------------------------------
+    vTaskDelay(20/portTICK_PERIOD_MS);
     while(1)
     {
-        printf("encoder value: %d\n", encoder.getValue());
-        vTaskDelay(100/portTICK_PERIOD_MS);
+        taskENTER_CRITICAL(&myMutex);
+        timer_get_counter_value(TIMER_GROUP_0, TIMER_0, &last_timer_val);
+        timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0);
+        curr_encoder_val = encoder.getValue();
+        last_speed = (1000*(curr_encoder_val-last_encoder_val))/((float)last_timer_val/800.0f);
+        last_speed = (60*last_speed)/PULSES_PER_WHEEL_REVOLUTION;
+        taskEXIT_CRITICAL(&myMutex);
+
+        
+        last_encoder_val = curr_encoder_val;
+        printf("encoder value: %d last timer val: %llu last speed: %0.2f\n", encoder.getValue(), last_timer_val, last_speed);
+
+        vTaskDelay(50/portTICK_PERIOD_MS);
     }
+}
+
+float encoder_get_speed(void)
+{
+    return last_speed;
 }

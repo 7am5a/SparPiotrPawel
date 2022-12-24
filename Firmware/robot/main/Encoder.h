@@ -19,3 +19,10 @@ protected:
  * @param pvParameter 
  */
 void encoder_task(void *pvParameter);
+
+/**
+ * @brief 
+ * 
+ * @return float 
+ */
+float encoder_get_speed(void);
