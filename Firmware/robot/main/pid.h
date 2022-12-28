@@ -31,4 +31,11 @@ void pid_external_loop(void);
  * 
  * @param setPoint 
  */
-void pid_internal_loop(float setPoint);
+void pid_internal_left_loop(float setPoint);
+
+/**
+ * @brief 
+ * 
+ * @param setPoint 
+ */
+void pid_internal_right_loop(float setPoint);

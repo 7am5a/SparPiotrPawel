@@ -3,7 +3,7 @@
 
 class Encoder {
 public:
-	Encoder(gpio_num_t gpioPinA, gpio_num_t gpioPinB, pcnt_unit_t pcntUnit = PCNT_UNIT_0);
+	Encoder(gpio_num_t gpioPinA, gpio_num_t gpioPinB, pcnt_unit_t pcntUnit);
 	void init();
 	int getValue() const;
 protected:
@@ -25,4 +25,4 @@ void encoder_task(void *pvParameter);
  * 
  * @return float 
  */
-float encoder_get_speed(void);
+float encoder_get_speed(uint8_t motor);

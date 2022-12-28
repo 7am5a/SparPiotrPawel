@@ -166,7 +166,7 @@ esp_err_t motor_set_speed(uint8_t motor, float speed)
         }
 
         //speed = map_speed(speed,0.0f,100.0f,0.0f,50.0f);
-        if(0u == motor)
+        if(MOTOR_LEFT == motor)
         {
             mcpwm_set_duty(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A, 0.0f);
             mcpwm_set_duty(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_B, speed);
@@ -209,15 +209,18 @@ esp_err_t motor_set_speed(uint8_t motor, float speed)
 
 void motor_stop (uint8_t motor)
 {
-    if(MOTOR_LEFT == motor)
+    switch(motor)
     {
-        mcpwm_set_duty(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A, 0.0f);
-        mcpwm_set_duty(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_B, 0.0f);
-    }
-    else
-    {
-        mcpwm_set_duty(MCPWM_UNIT_1, MCPWM_TIMER_0, MCPWM_OPR_A, 0.0f);
-        mcpwm_set_duty(MCPWM_UNIT_1, MCPWM_TIMER_0, MCPWM_OPR_B, 0.0f);
+        case MOTOR_LEFT:
+            mcpwm_set_duty(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A, 0.0f);
+            mcpwm_set_duty(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_B, 0.0f);
+            break;
+        case MOTOR_RIGHT:
+            mcpwm_set_duty(MCPWM_UNIT_1, MCPWM_TIMER_0, MCPWM_OPR_A, 0.0f);
+            mcpwm_set_duty(MCPWM_UNIT_1, MCPWM_TIMER_0, MCPWM_OPR_B, 0.0f);
+            break;
+        default:
+            break;
     }
     motor_PWM = 0.0f;
 }

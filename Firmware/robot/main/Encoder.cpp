@@ -15,6 +15,7 @@
 #include <stdint.h>
 #include "Encoder.h"
 #include "esp_err.h"
+#include "motor_control.h"
 
 #include <limits>
 
@@ -25,9 +26,12 @@
 #define TIMER_DIVIDER 100u
 
 static uint64_t last_timer_val;
-static int32_t last_encoder_val;
-static int32_t curr_encoder_val;
-static float last_speed;
+static int32_t last_right_encoder_val;
+static int32_t curr_right_encoder_val;
+static float last_right_speed;
+static int32_t last_left_encoder_val;
+static int32_t curr_left_encoder_val;
+static float last_left_speed;
 
 
 portMUX_TYPE myMutex = portMUX_INITIALIZER_UNLOCKED;
@@ -106,9 +110,11 @@ int32_t Encoder::getAddition() const {
 
 void encoder_task(void *pvParameter)
 {
-    Encoder encoder(GPIO_NUM_34, GPIO_NUM_35);
+    Encoder right_encoder(GPIO_NUM_34, GPIO_NUM_35, PCNT_UNIT_0);
+	Encoder left_encoder(GPIO_NUM_36, GPIO_NUM_39, PCNT_UNIT_1);
 
-    encoder.init();
+    right_encoder.init();
+    left_encoder.init();
      //Timer----------------------------------------------
     timer_config_t config = { 
         .alarm_en = TIMER_ALARM_EN,
@@ -128,20 +134,38 @@ void encoder_task(void *pvParameter)
         taskENTER_CRITICAL(&myMutex);
         timer_get_counter_value(TIMER_GROUP_0, TIMER_0, &last_timer_val);
         timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0);
-        curr_encoder_val = encoder.getValue();
-        last_speed = (1000*(curr_encoder_val-last_encoder_val))/((float)last_timer_val/800.0f);
-        last_speed = (60*last_speed)/PULSES_PER_WHEEL_REVOLUTION;
+        curr_right_encoder_val = right_encoder.getValue();
+        curr_left_encoder_val = left_encoder.getValue();
+        last_right_speed = (1000*(curr_right_encoder_val-last_right_encoder_val))/((float)last_timer_val/800.0f);
+		last_right_speed = (60*last_right_speed)/PULSES_PER_WHEEL_REVOLUTION;
+        last_left_speed = (1000*(curr_left_encoder_val-last_left_encoder_val))/((float)last_timer_val/800.0f);
+        last_left_speed = (60*last_left_speed)/PULSES_PER_WHEEL_REVOLUTION;
         taskEXIT_CRITICAL(&myMutex);
 
         
-        last_encoder_val = curr_encoder_val;
-        printf("encoder value: %d last timer val: %llu last speed: %0.2f\n", encoder.getValue(), last_timer_val, last_speed);
+        last_right_encoder_val = curr_right_encoder_val;
+        last_left_encoder_val = curr_left_encoder_val;
+        printf("right_encoder value: %0.0f, left_encoder value: %0.0f\n", last_right_speed, last_left_speed);
 
         vTaskDelay(50/portTICK_PERIOD_MS);
     }
 }
 
-float encoder_get_speed(void)
+float encoder_get_speed(uint8_t motor)
 {
-    return last_speed;
+	int32_t ret_val = 0;
+	
+	switch (motor)
+	{
+	case MOTOR_LEFT:
+		ret_val = last_left_speed;
+		break;
+	case MOTOR_RIGHT:
+		ret_val = last_right_speed;
+		break;
+	default:
+		break;
+	}
+    
+	return ret_val;
 }
