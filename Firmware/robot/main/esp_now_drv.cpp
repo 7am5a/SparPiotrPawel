@@ -9,6 +9,7 @@
 #include "nvs_flash.h"
 #include "esp_now.h"
 #include "esp_now_drv.h"
+#include "pid.h"
 
 #define TAG "ESP_NOW"
 
@@ -17,6 +18,7 @@
 extern uint32_t adc_read;
 
 TaskHandle_t esp_now_handle;
+Pid_data pid_data;
 
 //30 c6 f7 18 a0 d8 current chip
 //58:bf:25:91:d1:e4 test
@@ -62,8 +64,7 @@ void on_sent(const uint8_t *mac_addr, esp_now_send_status_t status)
 //function to debug
 void on_receive(const uint8_t *mac_addr, const uint8_t *data, int data_len)
 {
-    char buffer[13];
-    ESP_LOGI(TAG, "message receive from %s", mac_to_str(buffer, (uint8_t *) mac_addr));
+    memcpy(&pid_data, data, sizeof(pid_data));
     printf("message: %d  %s\n", data_len, data);
 }
 

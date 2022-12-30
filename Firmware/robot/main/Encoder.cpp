@@ -145,7 +145,8 @@ void encoder_task(void *pvParameter)
         
         last_right_encoder_val = curr_right_encoder_val;
         last_left_encoder_val = curr_left_encoder_val;
-        printf("right_encoder value: %0.0f, left_encoder value: %0.0f\n", last_right_speed, last_left_speed);
+        //printf(">left_speed:%f\n", -last_left_speed);
+		//printf(">right_speed:%f\n", last_right_speed);
 
         vTaskDelay(50/portTICK_PERIOD_MS);
     }

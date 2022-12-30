@@ -42,10 +42,21 @@ void task_initI2C(void *ignore) {
 	conf.scl_io_num = (gpio_num_t)PIN_CLK;
 	conf.sda_pullup_en = GPIO_PULLUP_ENABLE;
 	conf.scl_pullup_en = GPIO_PULLUP_ENABLE;
-	conf.master.clk_speed = 400000;
+	conf.master.clk_speed = 100000;
+	// conf.master.clk_speed = 400000;
 	ESP_ERROR_CHECK(i2c_param_config(I2C_NUM_0, &conf));
 	ESP_ERROR_CHECK(i2c_driver_install(I2C_NUM_0, I2C_MODE_MASTER, 0, 0, 0));
 	init_esp_now();
+
+	vTaskDelay(500/portTICK_PERIOD_MS);
+
+	mpu.initialize();
+	mpu.dmpInitialize();
+    mpu.CalibrateAccel(6);
+    mpu.CalibrateGyro(6);
+
+	mpu.setDMPEnabled(true);
+	calibrated = 1;
 	vTaskDelete(NULL);
 }
 
@@ -80,29 +91,29 @@ float mpu6050_read_angle()
 	return pitch;
 }
 
-void task_display(void*){
-	mpu.initialize();
-	mpu.dmpInitialize();
+// void task_display(void*){
+// 	// mpu.initialize();
+// 	// mpu.dmpInitialize();
 
-	// This need to be setup individually
-	// mpu.setXGyroOffset(220);
-	// mpu.setYGyroOffset(76);
-	// mpu.setZGyroOffset(-85);
-	// mpu.setZAccelOffset(1788);
-    mpu.CalibrateAccel(6);
-    mpu.CalibrateGyro(6);
+// 	// // This need to be setup individually
+// 	// // mpu.setXGyroOffset(220);
+// 	// // mpu.setYGyroOffset(76);
+// 	// // mpu.setZGyroOffset(-85);
+// 	// // mpu.setZAccelOffset(1788);
+//     // mpu.CalibrateAccel(6);
+//     // mpu.CalibrateGyro(6);
 
-	mpu.setDMPEnabled(true);
-	calibrated = 1;
+// 	// mpu.setDMPEnabled(true);
+// 	// calibrated = 1;
 
-	while(1){
+// 	while(1){
 	
-		vTaskDelay(50/portTICK_PERIOD_MS);
-	    //Best result is to match with DMP refresh rate
-	    // Its last value in components/MPU6050/MPU6050_6Axis_MotionApps20.h file line 310
-	    // Now its 0x13, which means DMP is refreshed with 10Hz rat]e
-		// vTaskDelay(5/portTICK_PERIOD_MS);
-	}
+// 		vTaskDelay(100/portTICK_PERIOD_MS);
+// 	    //Best result is to match with DMP refresh rate
+// 	    // Its last value in components/MPU6050/MPU6050_6Axis_MotionApps20.h file line 310
+// 	    // Now its 0x13, which means DMP is refreshed with 10Hz rat]e
+// 		// vTaskDelay(5/portTICK_PERIOD_MS);
+// 	}
 
-	vTaskDelete(NULL);
-	}
+// 	vTaskDelete(NULL);
+// 	}

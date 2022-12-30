@@ -1,5 +1,22 @@
 #pragma once
 
+struct __attribute__((__packed__)) Data_packed
+{
+  float angle;
+  float set_speed;
+  float right_speed;
+  float left_speed;
+  float Kp;
+  float Ki;
+  float Kd;
+};
+
+struct Pid_data
+{
+  float Kp;
+  float Ki;
+  float Kd;
+};
 
 /**
  * @brief pid task
