@@ -26,13 +26,8 @@ void on_receive();
  */
 void init_esp_now();
 
-/**
- * @brief Send encoder data to peer
- * 
- * @param param Parameter prefix
- * @param paramVal Current value of encoder
- */
-void enc_send_now(char param[2], int paramVal);
+
+void enc_send_now(float kp, float ki, float kd);
 
 /**
  * @brief Send joystick data to peer
@@ -41,5 +36,21 @@ void enc_send_now(char param[2], int paramVal);
  * @param yVal Y value in %
  */
 void joy_send_now(int xVal, int yVal);
+
+/**
+ * @brief 
+ * 
+ * @param kp 
+ * @param ki 
+ * @param kd 
+ */
+void reset_send_now(int kp, int ki, int kd);
+
+struct __attribute__((__packed__))PID_data 
+{
+    float Kp;
+    float Ki;
+    float Kd;
+};
 
 #endif

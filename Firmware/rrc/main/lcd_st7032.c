@@ -273,41 +273,4 @@ void lcd_st7032_create_char(uint8_t location, uint8_t* charmap)
 		| FUNCTION_SET_IS);
 }
 
-/*
-In main function - requires:
-
-    lcd_st7032_init();
-
-	// lcd_st7032_create_char(0x01, (uint8_t*)playChar);
-	// lcd_st7032_create_char(0x02, (uint8_t*)stopChar);
-
-	lcd_st7032_set_cursor(0, 0);
-	lcd_st7032_print("Hi!");
-	// lcd_st7032_set_cursor(1, 0);
-	// lcd_st7032_print("Play Stop: ");
-
-*/
-
-// void lcd_task()
-// {
-// 	lcd_st7032_set_cursor(0, 0);
-// 	lcd_st7032_print("Hi!");
-// 	lcd_st7032_set_cursor(0, 0);
-// 	lcd_st7032_clear();
-// 	lcd_st7032_cursor_off();
-// 	lcd_st7032_blink_off();
-//     while (1)
-//     {
-        
-//         vTaskDelay(500);
-//     }
-    
-// }
-
-// void set_lcd_task()
-// {
-//     xTaskCreate(lcd_task, "lcd_task", 2048, NULL, 10, NULL);
-// }
-
-//all library need to be rewritten (current file or last one - just to make code clear) and required to add menu display functions
 // https://github.com/bchodorowski/lcd_st7032 - inspiration

@@ -58,9 +58,7 @@ void install_gpio_sw()
 
 
 void switch_task()
-{    
-    int counter = 0;
-    
+{  
     while(1)
     {    
         //test task - return number of GPIO which was pressed
@@ -77,10 +75,10 @@ void switch_task()
         //  vTaskDelay(100 / portTICK_RATE_MS);
         //  gpio_hold_dis(pin_num);
 
-        if(!gpio_get_level(pin_num))
+        if(!gpio_get_level(pin_num))// && gpio_get_level(pin_num) != 0)
             {                
-                //printf("GPIO[%d] intr, val: %d, pressed: %d\n", pin_num, gpio_get_level(pin_num), counter++);
-                vTaskDelay(40 / portTICK_RATE_MS);
+                //printf("GPIO[%d] intr, val: %d\n", pin_num, gpio_get_level(pin_num));
+                vTaskDelay(30 / portTICK_RATE_MS);
                 pin_num = 0;
             }
             

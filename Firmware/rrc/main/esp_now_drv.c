@@ -18,13 +18,16 @@ extern uint32_t adc_read;
 
 TaskHandle_t esp_now_handle;
 
+struct PID_data pid_data;
+
 //30 c6 f7 18 a0 d8 current chip
 //58:bf:25:91:d1:e4 test
 uint8_t sparkFun[6] = {0x30, 0xc6, 0xf7, 0x18, 0xa0, 0xd8}; //Hardcode peer mac address - current is mac of SparkfunThing
-uint8_t wroom[6] = {0x58, 0xbf, 0x25, 0x91, 0xd1, 0xe4};
+uint8_t wroom_robot[6] = {0x44, 0x17, 0x93, 0x7c, 0x3e, 0x7c};
+uint8_t wroom_test[6] = {0x58, 0xbf, 0x25, 0x91, 0xd1, 0xe4};
 char mac_buffer[13];
 
-uint8_t *peer_mac = wroom;
+uint8_t *peer_mac = wroom_test;
 
 //max package of data
 char send_buffer[MAX_DATA_LENGTH];
@@ -97,17 +100,32 @@ void init_esp_now()
     memcpy(peer.peer_addr, peer_mac, 6);
 
     esp_now_add_peer(&peer);
+
 }
 
-void enc_send_now(char param[2], int paramVal)
+void enc_send_now(float kp, float ki, float kd)//char param[3], int paramVal)
 {        
-        //sprintf(send_buffer, "Hello from %s", mac_to_str(mac_buffer, (uint8_t *) sparkFun));
-        sprintf(send_buffer, "%s %d", param, paramVal);
-        esp_now_send(NULL, (uint8_t *)send_buffer, strlen(send_buffer));    
+    // //sprintf(send_buffer, "Hello from %s", mac_to_str(mac_buffer, (uint8_t *) sparkFun));
+    // sprintf(send_buffer, "%s %d ", param, paramVal);
+    // esp_now_send(NULL, (uint8_t *)send_buffer, strlen(send_buffer));   
+    pid_data.Kp = kp;
+    pid_data.Kp = ki;
+    pid_data.Kp = kd;
+    //sprintf(send_buffer, "Kp %d Ki %d Kd %d ", kp, ki, kd);
+    esp_now_send(NULL, (uint8_t *)&pid_data, sizeof(pid_data)); 
 }
 
 void joy_send_now(int xVal, int yVal)
 {
-    sprintf(send_buffer, "X %d Y %d", xVal, yVal);
+    sprintf(send_buffer, "X %d Y %d ", xVal, yVal);
     esp_now_send(NULL, (uint8_t *)send_buffer, strlen(send_buffer));
+}
+
+void reset_send_now(int kp, int ki, int kd)
+{
+    pid_data.Kp = kp;
+    pid_data.Kp = ki;
+    pid_data.Kp = kd;
+    //sprintf(send_buffer, "Kp %d Ki %d Kd %d ", kp, ki, kd);
+    esp_now_send(NULL, (uint8_t *)&pid_data, sizeof(pid_data));
 }

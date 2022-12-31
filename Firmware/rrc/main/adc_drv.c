@@ -146,7 +146,7 @@ void read_adc_task()
             printf("Y axis Value: %d %% \n", voltage_y);
             joy_send_now(voltage_x, voltage_y);
         }
-
+    
         // if(voltage_y != 0 && (voltage_y > 10 || voltage_y < -10))
         // {
         //     printf("Y axis Value: %d %% \n", voltage_y); 
@@ -160,7 +160,7 @@ void read_adc_task()
             vTaskDelete(joystick_handle);            
         }
 
-        vTaskDelay(50 / portTICK_RATE_MS);               
+        vTaskDelay(20 / portTICK_RATE_MS);               
     }
 }
 

@@ -20,9 +20,9 @@
 bool manualState = false;
 bool manualStateTaskCreate = false;
 
-int Kp = 1;
-int Ki = 1;
-int Kd = 1;
+float Kp = 20;
+float Ki = 0;
+float Kd = 0;
 char KpTab[4];
 char KiTab[4];
 char KdTab[4];
@@ -49,28 +49,7 @@ extern int pwm_duty_led;
 extern uint32_t adc_read;
 extern uint32_t voltage;
 
-//Below code is not necessary?------------------------------------
-//Pointers to menu functions - not sure it work porperly
- void (*key_next_func)(void);
- void (*key_prev_func)(void);
- void (*key_enter_func)(void);
- void (*key_back_func)(void);
-
-
 uint8_t percent = 50; //temp value - it should download pwm duty
-
-void menu_level_back()
-{
-    key_next_func = menu_next;
-    key_prev_func = menu_prev;
-    key_enter_func = menu_enter;
-    key_back_func = menu_back;
-
-    menu_refresh();
-}
-
-//-------------------------------------------------------------------
-
 
 void set_robot_control_task()
 {
@@ -80,14 +59,15 @@ void set_robot_control_task()
 void default_callback()
 {
     //Temporary values - hardcode settings required calculations
-    Kp = 1;
-    Ki = 1;
-    Kd = 1;    
+    Kp = 20;
+    Ki = 0;
+    Kd = 0;    
     printf("Kp, Ki, Kd was successfully reset\n");
     lcd_st7032_set_cursor(0, 0);
 	lcd_st7032_print("Kp, Ki, Kd reset");
     lcd_st7032_set_cursor(1, 0);
 	lcd_st7032_print("successfully");
+    reset_send_now(Kp, Ki, Kd);
     vTaskDelay(2000 / portTICK_RATE_MS);
     //And trigger sending function to RoboESP
 }
@@ -116,22 +96,25 @@ void pid_callback_task()//uint8_t *Kp, uint8_t *Ki, uint8_t *Kd)
             lcd_st7032_set_cursor(1, 0);
             if(encoder_value >= 1 && encoder_value != 0)
             {
-                Kp += 1;
-                printf("Kp: %d\n", Kp);                
+                Kp += 0.5;
+                printf("Kp: %f\n", Kp);                
                 lcd_st7032_print("Kp: ");
                 lcd_st7032_set_cursor(1, 4);
                 lcd_st7032_print(itoa(Kp,KpTab,10));
-                enc_send_now("Kp",Kp);
+                enc_send_now(Kp, Ki, Kd);
             }
 
             if(encoder_value <= -1 && encoder_value != 0)
             {
-                Kp -= 1;
-                printf("Kp: %d\n", Kp);                
-                lcd_st7032_print("Kp: ");
-                lcd_st7032_set_cursor(1, 4);
-                lcd_st7032_print(itoa(Kp,KpTab,10));
-                enc_send_now("Kp",Kp);
+                if(Kp > 0)
+                {
+                    Kp -= 0.5;
+                    printf("Kp: %f\n", Kp);                
+                    lcd_st7032_print("Kp: ");
+                    lcd_st7032_set_cursor(1, 4);
+                    lcd_st7032_print(itoa(Kp,KpTab,10));
+                    enc_send_now(Kp, Ki, Kd);
+                }
             }
             Encoder = 0;
         }
@@ -147,22 +130,25 @@ void pid_callback_task()//uint8_t *Kp, uint8_t *Ki, uint8_t *Kd)
 
             if(encoder_value >= 1)
             {
-                Ki += 1;
-                printf("Ki: %d\n", Ki);                
+                Ki += 0.001;
+                printf("Ki: %f\n", Ki);                
                 lcd_st7032_print("Ki: ");
                 lcd_st7032_set_cursor(1, 4);
                 lcd_st7032_print(itoa(Ki,KiTab,10));
-                enc_send_now("Ki",Ki);
+                enc_send_now(Kp, Ki, Kd);
             }
 
             if(encoder_value <= -1)
             {
-                Ki -= 1;
-                printf("Ki: %d\n", Ki);                
+                if(Ki > 0)
+                {
+                Ki -= 0.001;
+                printf("Ki: %f\n", Ki);                
                 lcd_st7032_print("Ki: ");
                 lcd_st7032_set_cursor(1, 4);
                 lcd_st7032_print(itoa(Ki,KiTab,10));
-                enc_send_now("Ki",Ki);
+                enc_send_now(Kp, Ki, Kd);
+                }
             }
             Encoder = 0;
         }
@@ -177,22 +163,25 @@ void pid_callback_task()//uint8_t *Kp, uint8_t *Ki, uint8_t *Kd)
 
             if(encoder_value >= 1)
             {
-                Kd += 1;
-                printf("Kd: %d\n", Kd);
+                Kd += 0.01;
+                printf("Kd: %f\n", Kd);
                 lcd_st7032_print("Kd: ");
                 lcd_st7032_set_cursor(1, 4);
                 lcd_st7032_print(itoa(Kd,KdTab,10));
-                enc_send_now("Kd",Kd);
+                enc_send_now(Kp, Ki, Kd);
             }
 
             if(encoder_value <= -1)
             {
-                Kd -= 1;
-                printf("Kd: %d\n", Kd);
-                lcd_st7032_print("Kd: ");
-                lcd_st7032_set_cursor(1, 4);
-                lcd_st7032_print(itoa(Kd,KdTab,10));
-                enc_send_now("Kd",Kd);
+                if(Kd > 0)
+                {
+                    Kd -= 0.01;
+                    printf("Kd: %f\n", Kd);
+                    lcd_st7032_print("Kd: ");
+                    lcd_st7032_set_cursor(1, 4);
+                    lcd_st7032_print(itoa(Kd,KdTab,10));
+                    enc_send_now(Kp, Ki, Kd);
+                }
             }
             Encoder = 0;
         }
@@ -216,7 +205,7 @@ void brightness_refresh()
 {
     //VVV Function generer errors/reset ESP32 VVV
 
-    percent = pwm_duty_lcd/1024 * 10; //10 not 100 to easier display characters 
+    //percent = pwm_duty_lcd/1024 * 10; //10 not 100 to easier display characters 
     // char buffer[3];
     // itoa(percent, buffer, 10);
     
@@ -331,7 +320,7 @@ void set_battery_callback()
 
 void battery_callback_task()
 {
-    printf("Battery level is: \n");
+    //printf("Battery level is: \n");
     lcd_st7032_clear();
     lcd_st7032_set_cursor(0, 0);
     lcd_st7032_print("Battery level:  ");
@@ -342,6 +331,9 @@ void battery_callback_task()
         float battery_percent = ((float)voltage - 3000)/(3700 - 3000) * 100;
         printf("Voltage: %dmV, %d %%\n", voltage, (int)battery_percent);
         
+        lcd_st7032_clear();
+        lcd_st7032_set_cursor(0, 0);
+        lcd_st7032_print("Battery level:  ");
         lcd_st7032_set_cursor(1, 0);
         lcd_st7032_print("      ");
         lcd_st7032_set_cursor(1, 6);
@@ -356,8 +348,6 @@ void battery_callback_task()
             vTaskDelete(battery_handle);
         }
         
-        vTaskDelay(5000 / portTICK_RATE_MS);
-        vTaskDelete(battery_handle);
-    
+        vTaskDelay(20 / portTICK_RATE_MS);    
     }
 }

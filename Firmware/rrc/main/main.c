@@ -45,7 +45,7 @@ void app_main(void)
     //Set up all tasks
     set_switch_task(); 
     set_read_adc_task();
-    set_pwm_task();
+    //set_pwm_task();
     set_enc_task();
     set_menu_task();
     //-----------------------------------------------
