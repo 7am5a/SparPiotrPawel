@@ -1,4 +1,8 @@
-build/
-.devcontainer/
-.vscode/
-sdkconfig.*
+robot/build/
+robot/.devcontainer/
+robot/.vscode/
+robot/sdkconfig.*
+rrc/build/
+rrc/.devcontainer/
+rrc/.vscode/
+rrc/sdkconfig.*
