@@ -27,7 +27,7 @@ uint8_t wroom_robot[6] = {0x44, 0x17, 0x93, 0x7c, 0x3e, 0x7c};
 uint8_t wroom_test[6] = {0x58, 0xbf, 0x25, 0x91, 0xd1, 0xe4};
 char mac_buffer[13];
 
-uint8_t *peer_mac = wroom_test;
+uint8_t *peer_mac = wroom_robot;
 
 //max package of data
 char send_buffer[MAX_DATA_LENGTH];
@@ -109,8 +109,8 @@ void enc_send_now(float kp, float ki, float kd)//char param[3], int paramVal)
     // sprintf(send_buffer, "%s %d ", param, paramVal);
     // esp_now_send(NULL, (uint8_t *)send_buffer, strlen(send_buffer));   
     pid_data.Kp = kp;
-    pid_data.Kp = ki;
-    pid_data.Kp = kd;
+    pid_data.Ki = ki;
+    pid_data.Kd = kd;
     //sprintf(send_buffer, "Kp %d Ki %d Kd %d ", kp, ki, kd);
     esp_now_send(NULL, (uint8_t *)&pid_data, sizeof(pid_data)); 
 }

@@ -65,7 +65,9 @@ void on_sent(const uint8_t *mac_addr, esp_now_send_status_t status)
 void on_receive(const uint8_t *mac_addr, const uint8_t *data, int data_len)
 {
     memcpy(&pid_data, data, sizeof(pid_data));
-    printf("message: %d  %s\n", data_len, data);
+    // printf(">Kp:%f\n",pid_data.Kp);
+    // printf(">Ki:%f\n",pid_data.Ki);
+    // printf(">Kd:%f\n",pid_data.Kd);
 }
 
 void init_esp_now()

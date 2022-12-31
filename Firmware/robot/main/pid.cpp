@@ -45,9 +45,9 @@ float map_speed(float x, float in_min, float in_max, float out_min, float out_ma
 
 void pid_external_loop()
 {
-  static float Kp = 23.0f; //pid_data.Kp; //23
-  static float Ki = 0.0f; //pid_data.Ki;
-  static float Kd = 0.5f; //pid_data.Kd; //0.5
+  // static float Kp = pid_data.Kp; //23
+  // static float Ki = pid_data.Ki;
+  // static float Kd = pid_data.Kd; //0.5
   static float proportional;
   static float integral;
   static float derivative;
@@ -71,19 +71,21 @@ void pid_external_loop()
   // }
   // SampleFilter_put(&sample_filter, (double)meas);
   // meas = SampleFilter_get(&sample_filter);
-  
+  data_packed.angle = meas;
+
   if(60 > meas && -60 < meas)
   {
     err = setPoint - meas;
 
-    proportional = Kp * err;
-    integral += Ki * err;
+    proportional = pid_data.Kp * err;
+    integral += pid_data.Ki * err;
     if(integral >= 100)
     {
       integral = 100;
     }
 
-    derivative = (1-Ts/T) * derivative + (Kd*(err-prev_err)/T);
+    // derivative = (1-Ts/T) * derivative + (pid_data.Kd*(err-prev_err)/T);
+    derivative = (pid_data.Kd*(err-prev_err))/Ts;
     prev_err = err;
     output = proportional + integral  + derivative;
 
@@ -98,13 +100,8 @@ void pid_external_loop()
 
     pid_internal_left_loop(output);
     pid_internal_right_loop(output);
-    
-    // printf(">setSpeed:%f\n", output);
-    data_packed.angle = meas;
-    data_packed.Kp = Kp;
-    data_packed.Ki = Ki;
-    data_packed.Kd = Kd;
     data_packed.set_speed = output;
+    // printf(">setSpeed:%f\n", output);
   }
   else
   {
@@ -113,13 +110,22 @@ void pid_external_loop()
     data_packed.set_speed = 0.0f;
   }
   // printf(">angle:%f\n", meas);
+  
+  data_packed.Kp = pid_data.Kp;
+  data_packed.Ki = pid_data.Ki;
+  data_packed.Kd = pid_data.Kd;
+  
+  // printf(">Kp:%f\n",pid_data.Kp);
+  // printf(">Ki:%f\n",pid_data.Ki);
+  // printf(">Kd:%f\n",pid_data.Kd);
+
   esp_now_send(NULL, (uint8_t *)&data_packed, sizeof(data_packed));  
 }
 
 void pid_internal_left_loop(float setPoint)
 {
-  static float Kp = 1.0f;
-  static float Ki = 0.0001f;
+  static float Kp = 0.7f;
+  static float Ki = 0.0003f;
   static float Kd = 0.0f;
   static float proportional;
   static float integral;
@@ -149,8 +155,8 @@ void pid_internal_left_loop(float setPoint)
 
 void pid_internal_right_loop(float setPoint)
 {
-  static float Kp = 1.0f;
-  static float Ki = 0.0001f;
+  static float Kp = 0.7f;
+  static float Ki = 0.0003f;
   static float Kd = 0.0f;
   static float proportional;
   static float integral;
