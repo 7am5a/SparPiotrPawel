@@ -6,9 +6,13 @@
 #include "driver/gpio.h"
 #include "esp_setup.h"
 #include "menu_callback.h"
-#include "lcd_drv.h"
-#include "lcd_buf_drv.h"
 #include "esp_log.h"
+#include "lcd_st7032.h"
+
+extern TaskHandle_t encoder_handle;
+extern TaskHandle_t brightness_handle;
+extern TaskHandle_t battery_handle;
+extern TaskHandle_t manual_handle;
 
 extern int pin_num;
 /*
@@ -18,16 +22,18 @@ extern int pin_num;
     level   1   sub_menu1_X     sub_menu2_X     NULL
     level   2   NULL            NULL            NULL
 */
-
-menu_t menu1 = {"Choose algorithm", &menu2, &menu3, &sub_menu1_1, NULL, NULL};
-    menu_t sub_menu1_1 = {"Set default settings", &sub_menu1_2, &sub_menu1_3, NULL, &menu1, default_callback};
-    menu_t sub_menu1_2 = {"PID", &sub_menu1_3, &sub_menu1_1, &sub_menu1_2_1, &menu1, set_pid_callback};
-        menu_t sub_menu1_2_1 ={"PID settings", NULL, &sub_menu1_2_1, NULL, &sub_menu1_2, NULL};
-    menu_t sub_menu1_3 = {"Kalman Filter", NULL, &sub_menu1_2, NULL, &menu1, kalman_callback};
-menu_t menu2 = {"Settings", &menu3, &menu1, &sub_menu2_1, NULL, NULL};
-    menu_t sub_menu2_1 = {"Change brightness", NULL, &sub_menu2_1, NULL, &menu2, brightness_callback};
-menu_t menu3 = {"Battery", &menu1, &menu2, &sub_menu3_1, NULL, set_battery_callback};
-    menu_t sub_menu3_1 = {"Battery level", &sub_menu3_1, &sub_menu3_1, NULL, &menu3, NULL};
+//             (*name,                          *next,          *prev,          *child,         *parent,        (*menu_function))
+menu_t menu1 = {"Manual control",               &menu2,         &menu4,         &sub_menu1_1,   NULL,           set_robot_control_task};
+    menu_t sub_menu1_1 = {"Now you can ride",   NULL,           &sub_menu1_1,   NULL,           &menu1,         NULL};
+menu_t menu2 = {"Choose algorithm",             &menu3,         &menu1,         &sub_menu2_1,   NULL,           NULL};
+    menu_t sub_menu2_1 = {"Default settings",   &sub_menu2_2,   &sub_menu2_3,   NULL,           &menu2,         default_callback};
+    menu_t sub_menu2_2 = {"PID",                &sub_menu2_3,   &sub_menu2_1,   &sub_menu2_2_1, &menu2,         set_pid_callback_task};
+        menu_t sub_menu2_2_1 ={"PID settings",  NULL,           &sub_menu2_2_1, NULL,           &sub_menu2_2,   NULL};
+    menu_t sub_menu2_3 = {"Kalman Filter",      NULL,           &sub_menu2_2,   NULL,           &menu2,         kalman_callback};
+menu_t menu3 = {"Settings",                     &menu4,         &menu2,         &sub_menu3_1,   NULL,           NULL};
+    menu_t sub_menu3_1 = {"Brightness",         NULL,           &sub_menu3_1,   NULL,           &menu3,         set_brightness_callback};
+menu_t menu4 = {"Battery",                      &menu1,         &menu3,         &sub_menu4_1,   NULL,           set_battery_callback};
+    menu_t sub_menu4_1 = {"Battery level",      &sub_menu4_1,   &sub_menu4_1,   NULL,           &menu4,         NULL};
 
 //Current position address in menu
 menu_t *currentPointer = &menu1;
@@ -37,7 +43,8 @@ uint8_t menu_index;                                 //Current menu level; start 
 uint8_t lcd_row_pos;                                //Current menu row; start at 0
 uint8_t lcd_row_pos_level_1, lcd_row_pos_level_2, lcd_row_pos_level_3;   //Row position
 
-extern char lcd_buf[LCD_ROWS][LCD_COLS];
+
+char lcd_buf[LCD_ROWS][LCD_COLS];
 
 //probably not necessary
 //  extern void (*key_next_func)(void);
@@ -62,34 +69,12 @@ void menu_refresh()
     for ( i = 0; i != menu_index - lcd_row_pos; i++)
     {
         temp = temp -> next;
-    }
-    
+    } 
 
-    buf_clear();
+    lcd_st7032_clear();
+    lcd_st7032_set_cursor(0, 0);	
+    lcd_st7032_print(currentPointer -> name); 
     
-    for ( i = 0; i < LCD_ROWS; i++)
-    {   
-        buf_locate(0, i);
-        if (temp == currentPointer) //print cursor
-        {
-            buf_char(62);
-        }
-        else
-        {
-            buf_char(' ');
-        }
-        
-        buf_locate(2, i); //print data on 3rd column
-        buf_str(temp -> name);
-        
-        temp = temp -> next;
-        if (!temp)
-        {
-            break;
-        }
-        
-    }    
-    lcd_refresh();
 }
 
 uint8_t menu_get_index(menu_t *index)
@@ -157,7 +142,9 @@ void menu_next()
     }
 
     printf("%s \n", currentPointer -> name);
-
+    lcd_st7032_clear();
+    lcd_st7032_set_cursor(0, 0);	
+    lcd_st7032_print(currentPointer -> name);
     menu_refresh();
 
 }
@@ -189,7 +176,9 @@ void menu_prev()
     }
 
     printf("%s \n", currentPointer -> name);
-
+    lcd_st7032_clear();
+    lcd_st7032_set_cursor(0, 0);	
+    lcd_st7032_print(currentPointer -> name);
     menu_refresh();
 
 }
@@ -202,6 +191,9 @@ void menu_enter()
         lastPointer = currentPointer;
         ESP_LOGI("SW2","do function");
         printf("%s \n", lastPointer -> name);
+        lcd_st7032_clear();
+        lcd_st7032_set_cursor(0, 0);	
+        lcd_st7032_print(lastPointer -> name);
     }
 
     if (currentPointer -> child)
@@ -225,23 +217,26 @@ void menu_enter()
         lcd_row_pos = 0;
         currentPointer = currentPointer -> child;
         printf("%s \n", currentPointer -> name);
+        lcd_st7032_clear();
+        lcd_st7032_set_cursor(0, 0);	
+        lcd_st7032_print(currentPointer -> name);
         menu_refresh();
     }    
 }
 
 void menu_back()
-{
-    
+{    
+    vTaskDelay(50 / portTICK_RATE_MS);
     if(currentPointer -> parent)
     {
         switch (menu_get_level(currentPointer)) {
 			case 0:
-                ESP_LOGI("log","go back1");
+                ESP_LOGI("log","go back0");
 				lcd_row_pos = lcd_row_pos_level_1;                
 				break;
  
 			case 1:
-                ESP_LOGI("log","go back2");
+                ESP_LOGI("log","go back1");
 				lcd_row_pos = lcd_row_pos_level_2;
 				break;
 
@@ -255,6 +250,9 @@ void menu_back()
         menu_index = menu_get_index(currentPointer);
     
         printf("%s \n", currentPointer -> name);
+        lcd_st7032_clear();
+        lcd_st7032_set_cursor(0, 0);	
+        lcd_st7032_print(currentPointer -> name);
         menu_refresh();
         
     }
@@ -264,6 +262,11 @@ void menu_back()
 void menu_task()
 {
     printf("%s \n", currentPointer -> name);
+    lcd_st7032_clear();
+    lcd_st7032_set_cursor(0, 0);
+    lcd_st7032_clear();
+    vTaskDelay(100 / portTICK_RATE_MS);
+    lcd_st7032_print(currentPointer -> name);
     while(1)
     {
         if((gpio_get_level(SW1) == 0) && pin_num == SW1)
@@ -283,7 +286,6 @@ void menu_task()
 
         if((gpio_get_level(SWJ) == 0) && pin_num == SWJ)
         {
-            //key_back_func = menu_back;
             menu_back();
         }
         vTaskDelay(20 / portTICK_RATE_MS);

@@ -8,23 +8,21 @@
 #include "esp_setup.h"
 #include "esp_adc_cal.h"
 #include "adc_drv.h"
+#include "esp_now_drv.h"
+#include "switch_drv.h"
+#include "esp_log.h"
+#include "menu.h"
 
 int adc_pin_num = 0;
 
 static esp_adc_cal_characteristics_t *adc_characteristics;
 
-//Queue handler
-static QueueHandle_t adc_queue;
+extern TaskHandle_t joystick_handle;
+extern int pin_num;
 
 //Read value from GPIO
 uint32_t adc_read = 0;
 uint32_t voltage = 0;
-
-void IRAM_ATTR adc_isr_handler(void *arg)
-{
-    int adc_pin_num = (int)arg;
-    xQueueSendFromISR(adc_queue, &adc_pin_num, NULL);
-}
 
 void print_cal_val_type(esp_adc_cal_value_t val_type)
 {    
@@ -49,17 +47,7 @@ void init_gpio_adc()
     adc1_config_width(ADC_WIDTH_BIT_12);
     adc1_config_channel_atten(VBAT_GPIO35, ADC_ATTEN_11db);
     adc1_config_channel_atten(JOY_X_GPIO34, ADC_ATTEN_11db);
-    adc1_config_channel_atten(JOY_Y_GPIO39, ADC_ATTEN_11db);
-
-    //not sure if it is proper set------------------------------
-    //Install ISR driver
-    gpio_install_isr_service(0);
-    
-    //Attach ISR to each switch
-    gpio_isr_handler_add(JOY_X, adc_isr_handler, (void*)JOY_X);
-    gpio_isr_handler_add(JOY_Y, adc_isr_handler, (void*)JOY_Y);
-    gpio_isr_handler_add(VBAT, adc_isr_handler, (void*)VBAT);
-    //----------------------------------------------------------
+    adc1_config_channel_atten(JOY_Y_GPIO39, ADC_ATTEN_11db);    
 }
 
 //Temporary set adc read from only one gpio - use enum or if or read all time from every adc's
@@ -77,11 +65,21 @@ void read_VBAT_adc_task()
         
         //Convert raw value to mV
         voltage = esp_adc_cal_raw_to_voltage(adc_read, adc_characteristics);
-       
         vTaskDelay(5000 / portTICK_RATE_MS);        
     }
 }
 
+//
+//
+//
+//
+//
+//need to be switched to menu_callback.c or split between adc_drv.c and menu_callback.c
+//
+//
+//
+//
+//
 void read_adc_task()
 {
     int x_adc_read = 0;
@@ -122,11 +120,6 @@ void read_adc_task()
             voltage_x = 0;
         }           
         
-        if(voltage_x != 0 && (voltage_x > 10 || voltage_x < -10))
-        {
-            printf("X axis Value: %d %% \n", voltage_x);
-        }
-        
         //Y axis    
         int voltage_y = esp_adc_cal_raw_to_voltage(y_adc_read, adc_characteristics);
         //Down
@@ -146,18 +139,33 @@ void read_adc_task()
             voltage_y = 0;
         }
         
-        if(voltage_y != 0 && (voltage_y > 10 || voltage_y < -10))
+        //print + send both values
+        if((voltage_x != 0 && (voltage_x > 15 || voltage_x < -15)) || (voltage_y != 0 && (voltage_y > 15 || voltage_y < -15)))
         {
+            printf("X axis Value: %d %% \n", voltage_x);
             printf("Y axis Value: %d %% \n", voltage_y);
+            joy_send_now(voltage_x, voltage_y);
         }
+    
+        // if(voltage_y != 0 && (voltage_y > 10 || voltage_y < -10))
+        // {
+        //     printf("Y axis Value: %d %% \n", voltage_y); 
+        //     joy_send_now(voltage_x, voltage_y);           
+        // }
+        
         //delay can be change to increase smooth of control
-        vTaskDelay(pdMS_TO_TICKS(50));               
+        if((gpio_get_level(SWJ) == 0) && pin_num == SWJ)
+        {
+            ESP_LOGW("joy","deleted");
+            vTaskDelete(joystick_handle);            
+        }
+
+        vTaskDelay(20 / portTICK_RATE_MS);               
     }
 }
 
 void set_read_adc_task()
 {
-    adc_queue = xQueueCreate(10, sizeof(int));
     xTaskCreate(read_VBAT_adc_task, "read_VBAT_adc_task", 2048, NULL , 10, NULL);
-    xTaskCreate(read_adc_task, "read_adc_task", 2048, NULL , 10, NULL);
+    //xTaskCreate(read_adc_task, "read_adc_task", 2048, NULL , 10, NULL);
 }

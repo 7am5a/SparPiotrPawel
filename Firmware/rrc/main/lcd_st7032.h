@@ -88,6 +88,8 @@ void lcd_st7032_blink_off();
  */
 void lcd_st7032_clear();
 
+void lcd_st7032_clear_line(uint8_t line);
+
 /*
  * Move the cursor to the top left corner.
  */

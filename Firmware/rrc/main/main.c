@@ -13,7 +13,7 @@
 #include "adc_drv.h"
 #include "pwm_drv.h"
 #include "enc_drv.h"
-#include "lcd_drv.h"
+//#include "lcd_drv.h"
 //#include "lcd_buf_drv.h"  //maby not insert these libraries causes warnings and esp reset -> commented parts of functions in menu callback and lcd_buf
 #include "menu_callback.h"
 #include "menu.h"
@@ -30,7 +30,8 @@ void app_main(void)
 
     lcd_st7032_init();
 
-    // init_lcd_i2c();
+    init_esp_now();
+
     //------------------------------------------------
 
     //test/debug task - not necessary in final release
@@ -44,11 +45,9 @@ void app_main(void)
     //Set up all tasks
     set_switch_task(); 
     set_read_adc_task();
-    set_pwm_task();
+    //set_pwm_task();
     set_enc_task();
-    //set_send_now_task();
     set_menu_task();
-    set_lcd_task();
     //-----------------------------------------------
          
 }

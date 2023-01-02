@@ -63,7 +63,7 @@ static void writeInstruction(uint8_t cmd)
 	data_t[0] = CONTROL_BYTE;
 	data_t[1] = cmd;
 	
-	ESP_LOGI("cmd: ","%x ", cmd);
+	//ESP_LOGI("cmd: ","%x ", cmd);
 
 	esp_err_t esp_err_test = i2c_master_write_to_device(I2C_NUM_0, LCD_ADDR, data_t, 2, 1000/ portTICK_RATE_MS);
 
@@ -136,6 +136,9 @@ void lcd_st7032_init()
 	display = 0x7;
 	display_on_off();
     usleep(300);
+	
+	lcd_st7032_cursor_off();
+	lcd_st7032_blink_off();
 }
 
 void lcd_st7032_set_contrast(uint8_t value)
@@ -190,6 +193,19 @@ void lcd_st7032_clear()
 	writeInstruction(CLEAR_DISPLAY);
 }
 
+void lcd_st7032_clear_line(uint8_t line)
+{
+	uint8_t p;
+	if (line == 0)
+		p = LINE_1_ADDR;
+	else
+		p = LINE_2_ADDR;
+
+	writeInstruction(SET_DDRAM_ADDRESS | p);
+	lcd_st7032_print("                ");
+	lcd_st7032_set_cursor(p, 0);
+}
+
 void lcd_st7032_home()
 {
 	writeInstruction(RETURN_HOME);
@@ -202,7 +218,7 @@ void lcd_st7032_write(uint8_t data)
 	data_t[0] = CONTROL_BYTE_RS;
 	data_t[1] = data;
 
-	ESP_LOGI("data: ","%x ", data);
+	//ESP_LOGI("data: ","%x ", data);
 
     esp_err_t err2 = i2c_master_write_to_device(I2C_NUM_0, LCD_ADDR, data_t, 2, 1000 / portTICK_RATE_MS);
 
@@ -215,6 +231,7 @@ void lcd_st7032_write(uint8_t data)
 
 void lcd_st7032_print(char* data)
 {
+	
 	while (*data)
 	{
 		lcd_st7032_write(*data);
@@ -256,36 +273,4 @@ void lcd_st7032_create_char(uint8_t location, uint8_t* charmap)
 		| FUNCTION_SET_IS);
 }
 
-/*
-In main function - requires:
-
-    lcd_st7032_init();
-
-	// lcd_st7032_create_char(0x01, (uint8_t*)playChar);
-	// lcd_st7032_create_char(0x02, (uint8_t*)stopChar);
-
-	lcd_st7032_set_cursor(0, 0);
-	lcd_st7032_print("Hi!");
-	// lcd_st7032_set_cursor(1, 0);
-	// lcd_st7032_print("Play Stop: ");
-
-*/
-
-void lcd_task()
-{
-    while (1)
-    {
-        lcd_st7032_set_cursor(0, 0);
-        lcd_st7032_print("Hi!");
-        vTaskDelay(1000);
-    }
-    
-}
-
-void set_lcd_task()
-{
-    xTaskCreate(lcd_task, "lcd_task", 2048, NULL, 10, NULL);
-}
-
-//all library need to be rewritten (current file or last one - just to make code clear) and required to add menu display functions
 // https://github.com/bchodorowski/lcd_st7032 - inspiration

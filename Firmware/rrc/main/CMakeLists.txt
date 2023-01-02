@@ -1,9 +1,9 @@
 idf_component_register(SRCS "lcd_st7032.c"
                             "esp_now_drv.c"
-                            "lcd_buf_drv.c"
+                           
                             "menu_callback.c"
                             "menu.c"
-                            "lcd_drv.c"
+                           
                             "enc_drv.c"
                             "pwm_drv.c"
                             "main.c"                           
