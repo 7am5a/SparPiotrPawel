@@ -14,7 +14,7 @@
 
 //ENC channels
 #define ENC1_A 13
-#define ENC1_B 18 //it was 12
+#define ENC1_B 12
 #define ENC2_A 27
 #define ENC2_B 14
 #define ENC3_A 26

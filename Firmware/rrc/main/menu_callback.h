@@ -1,18 +1,11 @@
 #ifndef MENU_CALLBACK
 #define MENU_CALLBACK
 
-
 /**
  * @brief Return to higher menu level without using 4th switch (SWJ) - temporary not used, working on function pointers
  * 
  */
 void menu_level_back();
-
-/**
- * @brief Set the robot control task object
- * 
- */
-void set_robot_control_task();
 
 /**
  * @brief Set default filter option - PID with hardcode Kp, Ki and Kd
@@ -24,7 +17,7 @@ void default_callback();
  * @brief Set the pid callback object
  * 
  */
-void set_pid_callback_task();
+void set_pid_callback();
 
 /**
  * @brief Set every single one part of PID filter in real time
@@ -72,10 +65,6 @@ void brightness_back();
  * @param duty Choose duty in range 0-100 (decimal) in %
  */
 void brightness_callback();//uint8_t *duty);
-
-void set_brightness_callback();
-
-void brightness_callback_task();
 
 /**
  * @brief Set the battery callback object

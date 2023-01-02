@@ -6,6 +6,4 @@
  */
 void esp_hello_task();
 
-
-
 #endif

@@ -26,31 +26,21 @@ void on_receive();
  */
 void init_esp_now();
 
-
-void enc_send_now(float kp, float ki, float kd);
+//optionaly send flag as params - value will be stay as it is 
+/**
+ * @brief Send data to peer
+ * 
+ * @param param1 - name of first parameter
+ * @param value1 - value of first parameter
+ * @param param2 - name of second parameter - if exist
+ * @param value2 - value of second parameter - if exist
+ */
+void send_now_task(int16_t param1, int16_t value1, int16_t param2, int16_t value2);
 
 /**
- * @brief Send joystick data to peer
+ * @brief Set the send now task object
  * 
- * @param xVal X value in %
- * @param yVal Y value in %
  */
-void joy_send_now(int xVal, int yVal);
-
-/**
- * @brief 
- * 
- * @param kp 
- * @param ki 
- * @param kd 
- */
-void reset_send_now(int kp, int ki, int kd);
-
-struct __attribute__((__packed__))PID_data 
-{
-    float Kp;
-    float Ki;
-    float Kd;
-};
+void set_send_now_task();
 
 #endif

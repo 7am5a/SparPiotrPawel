@@ -1,7 +1,5 @@
 #ifndef MENU
 #define MENU
-#define LCD_ROWS    2
-#define LCD_COLS    16
 
 /**
  * @brief Definition of menu components (*name, *next, *prev, *child, *parent, (*menu_function))
@@ -21,15 +19,13 @@ struct menu_struct {
 
 menu_t menu1;
     menu_t sub_menu1_1;
+    menu_t sub_menu1_2;
+        menu_t sub_menu1_2_1;
+    menu_t sub_menu1_3;
 menu_t menu2;
     menu_t sub_menu2_1;
-    menu_t sub_menu2_2;
-        menu_t sub_menu2_2_1;
-    menu_t sub_menu2_3;
 menu_t menu3;
     menu_t sub_menu3_1;
-menu_t menu4;
-    menu_t sub_menu4_1;
 
 /**
  * @brief Enable shift to next menu option.
