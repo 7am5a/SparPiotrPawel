@@ -18,6 +18,7 @@ extern uint32_t adc_read;
 
 TaskHandle_t esp_now_handle;
 
+struct State_Based_data state_based_data;
 struct PID_data pid_data;
 
 //30 c6 f7 18 a0 d8 current chip
@@ -27,7 +28,7 @@ uint8_t wroom_robot[6] = {0x44, 0x17, 0x93, 0x7c, 0x3e, 0x7c};
 uint8_t wroom_test[6] = {0x58, 0xbf, 0x25, 0x91, 0xd1, 0xe4};
 char mac_buffer[13];
 
-uint8_t *peer_mac = wroom_test;
+uint8_t *peer_mac = wroom_robot;
 
 //max package of data
 char send_buffer[MAX_DATA_LENGTH];
@@ -103,7 +104,15 @@ void init_esp_now()
 
 }
 
-void enc_send_now(float kp, float ki, float kd)//char param[3], int paramVal)
+void enc_state_based_send_now(float k1, float k2, float k3)
+{
+    state_based_data.K1 = k1;
+    state_based_data.K2 = k2;
+    state_based_data.K3 = k3;
+    esp_now_send(NULL, (uint8_t *)&state_based_data, sizeof(state_based_data));
+}
+
+void enc_pid_send_now(float kp, float ki, float kd)//char param[3], int paramVal)
 {        
     // //sprintf(send_buffer, "Hello from %s", mac_to_str(mac_buffer, (uint8_t *) sparkFun));
     // sprintf(send_buffer, "%s %d ", param, paramVal);
@@ -121,11 +130,15 @@ void joy_send_now(int xVal, int yVal)
     esp_now_send(NULL, (uint8_t *)send_buffer, strlen(send_buffer));
 }
 
-void reset_send_now(int kp, int ki, int kd)
+void reset_send_now(float k1, float k2, float k3, float kp, float ki, float kd)
 {
+    state_based_data.K1 = k1;    
+    state_based_data.K2 = k2;    
+    state_based_data.K3 = k1;    
     pid_data.Kp = kp;
     pid_data.Ki = ki;
     pid_data.Kd = kd;
     //sprintf(send_buffer, "Kp %d Ki %d Kd %d ", kp, ki, kd);
+    esp_now_send(NULL, (uint8_t *)&state_based_data, sizeof(state_based_data));
     esp_now_send(NULL, (uint8_t *)&pid_data, sizeof(pid_data));
 }

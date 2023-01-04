@@ -17,14 +17,20 @@
 #include "esp_now_drv.h"
 #include "adc_drv.h"
 
-#define CHAR_BUF 6
+#define CHAR_BUF 4
 
 bool manualState = false;
 bool manualStateTaskCreate = false;
 
-float Kp = 20;
+float K1 = 0;
+float K2 = 0;
+float K3 = 0;
+float Kp = 10;
 float Ki = 0;
 float Kd = 0;
+char K1Tab[CHAR_BUF];
+char K2Tab[CHAR_BUF];
+char K3Tab[CHAR_BUF];
 char KpTab[CHAR_BUF];
 char KiTab[CHAR_BUF];
 char KdTab[CHAR_BUF];
@@ -38,7 +44,8 @@ int settingsFlag;
 extern int Encoder;
 extern int encoder_value;
 
-TaskHandle_t encoder_handle;
+TaskHandle_t pid_handle;
+TaskHandle_t state_based_handle;
 TaskHandle_t brightness_handle;
 TaskHandle_t battery_handle;
 TaskHandle_t manual_handle;
@@ -61,27 +68,180 @@ void set_robot_control_task()
 void default_callback()
 {
     //Temporary values - hardcode settings required calculations
-    Kp = 20;
-    Ki = 0;
-    Kd = 0;    
-    printf("Kp, Ki, Kd was successfully reset\n");
+    K1 = 0;
+    K2 = 0;
+    K3 = 0;
+    Kp = 10.0f; //20
+    Ki = 0.0f;
+    Kd = 0.0f;    
+    
+    printf("K1, K2, K3, Kp, Ki, Kd was successfully reset\n");
     lcd_st7032_set_cursor(0, 0);
-	lcd_st7032_print("Kp, Ki, Kd reset");
+	lcd_st7032_print("Parameters reset");
     lcd_st7032_set_cursor(1, 0);
 	lcd_st7032_print("successfully");
-    reset_send_now(Kp, Ki, Kd);
+    reset_send_now(K1, K2, K3, Kp, Ki, Kd);
     vTaskDelay(2000 / portTICK_RATE_MS);
     //And trigger sending function to RoboESP
 }
 
+void set_state_based_callback_task()
+{
+    xTaskCreate(state_based_callback_task, "state_based_callback_task", 2048, NULL , 10, state_based_handle);
+}
+
+void state_based_callback_task()
+{
+    enc_state_based_send_now(K1, K2, K3);
+    vTaskDelay(1000 / portTICK_RATE_MS);
+    printf("You choose: \n");
+    lcd_st7032_clear();
+    lcd_st7032_set_cursor(0, 0);	
+    lcd_st7032_print("You choose: ");
+    lcd_st7032_set_cursor(1, 0);
+    while (1)
+    {
+        if(Encoder == 1)
+        {
+            vTaskDelay(30 / portTICK_RATE_MS);
+            lcd_st7032_clear();
+            lcd_st7032_set_cursor(0, 0);	
+            lcd_st7032_print("You choose: ");
+            lcd_st7032_set_cursor(1, 0);
+
+            if(encoder_value >= 1 && encoder_value != 0)
+            {
+                K1 += 0.1;
+                printf("K1: %f\n", K1);                
+                lcd_st7032_print("K1: ");
+                lcd_st7032_set_cursor(1, 4);
+                lcd_st7032_print(itoa(K1, K1Tab, 10));
+                lcd_st7032_print(".");
+                lcd_st7032_print(itoa((int)((K1 - (int)K1) * 10), K1Tab, 10));
+                enc_state_based_send_now(K1, K2, K3);
+            }
+
+            if(encoder_value <= -1 && encoder_value != 0)
+            {
+                if(K1 >= 0.1)
+                {
+                    K1 -= 0.1;
+                    printf("K1: %f\n", K1);                
+                    lcd_st7032_print("K1: ");
+                    lcd_st7032_set_cursor(1, 4);
+                    lcd_st7032_print(itoa(K1, K1Tab, 10));
+                    lcd_st7032_print(".");
+                    lcd_st7032_print(itoa((int)((K1 - (int)K1) * 10), K1Tab, 10));
+                    enc_state_based_send_now(K1, K2, K3);
+                }
+                else
+                {
+                    lcd_st7032_print("K1: 0.0");
+                }
+            }
+            Encoder = 0;
+        }
+
+        if(Encoder == 2)
+        {
+            vTaskDelay(30 / portTICK_RATE_MS);            
+            lcd_st7032_clear();
+            lcd_st7032_set_cursor(0, 0);	
+            lcd_st7032_print("You choose: ");
+            lcd_st7032_set_cursor(1, 0);
+
+            if(encoder_value >= 1)
+            {
+                K2 += 0.1;
+                printf("K2: %f\n", K2);                
+                lcd_st7032_print("K2: ");
+                lcd_st7032_set_cursor(1, 4);
+                lcd_st7032_print(itoa(K2, K2Tab, 10));
+                lcd_st7032_print(".");               
+                lcd_st7032_print(itoa((int)((K2 - (int)K2) * 10), K2Tab, 10));
+                enc_state_based_send_now(K1, K2, K3);
+            }
+
+            if(encoder_value <= -1)
+            {
+                if(K2 >= 0.1)
+                {
+                K2 -= 0.1;
+                printf("K2: %f\n", K2);                
+                lcd_st7032_print("K2: ");
+                lcd_st7032_set_cursor(1, 4);
+                lcd_st7032_print(itoa(K2, K2Tab, 10));                
+                lcd_st7032_print(".");
+                lcd_st7032_print(itoa((int)((K2 - (int)K2) * 10), K2Tab, 10));
+                enc_state_based_send_now(K1, K2, K3);
+                }
+                else
+                {
+                    lcd_st7032_print("K2: 0.0");
+                }
+            }
+            Encoder = 0;
+        }
+
+        if(Encoder == 3)
+        {
+            vTaskDelay(30 / portTICK_RATE_MS);
+            lcd_st7032_clear();
+            lcd_st7032_set_cursor(0, 0);	
+            lcd_st7032_print("You choose: ");
+            lcd_st7032_set_cursor(1, 0);
+
+            if(encoder_value >= 1)
+            {
+                K3 += 0.1;
+                printf("K3: %f\n", K3);
+                lcd_st7032_print("K3: ");
+                lcd_st7032_set_cursor(1, 4);
+                lcd_st7032_print(itoa(K3, K3Tab, 10));
+                lcd_st7032_print(".");                
+                lcd_st7032_print(itoa((int)((K3 - (int)K3) * 10), K3Tab, 10));
+                enc_state_based_send_now(K1, K2, K3);
+            }
+
+            if(encoder_value <= -1)
+            {
+                if(K3 >= 0.1)
+                {
+                    K3 -= 0.1;
+                    printf("K3: %f\n", K3);
+                    lcd_st7032_print("K3: ");
+                    lcd_st7032_set_cursor(1, 4);
+                    lcd_st7032_print(itoa(K3, K3Tab,10));                    
+                    lcd_st7032_print(".");
+                    lcd_st7032_print(itoa((int)((K3 - (int)K3) * 10), K3Tab, 10));
+                    enc_state_based_send_now(K1, K2, K3);
+                }
+                else
+                {
+                    lcd_st7032_print("K3: 0.0");
+                }
+            }
+            Encoder = 0;
+        }
+
+        if((gpio_get_level(SWJ) == 0) && pin_num == SWJ)
+        {
+            ESP_LOGW("state_based","deleted");
+            vTaskDelete(state_based_handle);            
+        }
+
+        vTaskDelay(20 / portTICK_RATE_MS); 
+    }
+}
+
 void set_pid_callback_task()
 {
-    xTaskCreate(pid_callback_task, "pid_callback_task", 2048, NULL , 10, encoder_handle);
+    xTaskCreate(pid_callback_task, "pid_callback_task", 2048, NULL , 10, pid_handle);
 }
 
 void pid_callback_task()//uint8_t *Kp, uint8_t *Ki, uint8_t *Kd)
 {    
-    enc_send_now(Kp, Ki, Kd);
+    enc_pid_send_now(Kp, Ki, Kd);
     vTaskDelay(1000 / portTICK_RATE_MS);
     printf("You choose: \n");
     lcd_st7032_clear();
@@ -106,7 +266,7 @@ void pid_callback_task()//uint8_t *Kp, uint8_t *Ki, uint8_t *Kd)
                 lcd_st7032_print(itoa(Kp,KpTab,10));
                 lcd_st7032_print(".");
                 lcd_st7032_print(itoa((int)((Kp - (int)Kp) * 10), KpTab, 10));
-                enc_send_now(Kp, Ki, Kd);
+                enc_pid_send_now(Kp, Ki, Kd);
             }
 
             if(encoder_value <= -1 && encoder_value != 0)
@@ -120,7 +280,7 @@ void pid_callback_task()//uint8_t *Kp, uint8_t *Ki, uint8_t *Kd)
                     lcd_st7032_print(itoa(Kp,KpTab,10));
                     lcd_st7032_print(".");
                     lcd_st7032_print(itoa((int)((Kp - (int)Kp) * 10), KpTab, 10));
-                    enc_send_now(Kp, Ki, Kd);
+                    enc_pid_send_now(Kp, Ki, Kd);
                 }
                 else
                 {
@@ -159,7 +319,7 @@ void pid_callback_task()//uint8_t *Kp, uint8_t *Ki, uint8_t *Kd)
                     lcd_st7032_print(".");
                 }
                 lcd_st7032_print(itoa((int)((Ki - (int)Ki) * 1000), KiTab, 10));
-                enc_send_now(Kp, Ki, Kd);
+                enc_pid_send_now(Kp, Ki, Kd);
             }
 
             if(encoder_value <= -1)
@@ -184,7 +344,7 @@ void pid_callback_task()//uint8_t *Kp, uint8_t *Ki, uint8_t *Kd)
                     lcd_st7032_print(".");
                 }
                 lcd_st7032_print(itoa((int)((Ki - (int)Ki) * 1000), KiTab, 10));
-                enc_send_now(Kp, Ki, Kd);
+                enc_pid_send_now(Kp, Ki, Kd);
                 }
                 else
                 {
@@ -204,7 +364,7 @@ void pid_callback_task()//uint8_t *Kp, uint8_t *Ki, uint8_t *Kd)
 
             if(encoder_value >= 1)
             {
-                Kd += 0.001;
+                Kd += 0.001;//0,001
                 printf("Kd: %f\n", Kd);
                 lcd_st7032_print("Kd: ");
                 lcd_st7032_set_cursor(1, 4);
@@ -222,14 +382,14 @@ void pid_callback_task()//uint8_t *Kp, uint8_t *Ki, uint8_t *Kd)
                     lcd_st7032_print(".");
                 }
                 lcd_st7032_print(itoa((int)((Kd - (int)Kd) * 1000), KdTab, 10));
-                enc_send_now(Kp, Ki, Kd);
+                enc_pid_send_now(Kp, Ki, Kd);
             }
 
             if(encoder_value <= -1)
             {
                 if(Kd > 0.001)
                 {
-                    Kd -= 0.001;
+                    Kd -= 0.001;//0,001
                     printf("Kd: %f\n", Kd);
                     lcd_st7032_print("Kd: ");
                     lcd_st7032_set_cursor(1, 4);
@@ -247,7 +407,7 @@ void pid_callback_task()//uint8_t *Kp, uint8_t *Ki, uint8_t *Kd)
                         lcd_st7032_print(".");
                     }
                     lcd_st7032_print(itoa((int)((Kd - (int)Kd) * 1000), KdTab, 10));
-                    enc_send_now(Kp, Ki, Kd);
+                    enc_pid_send_now(Kp, Ki, Kd);
                 }
                 else
                 {
@@ -260,16 +420,11 @@ void pid_callback_task()//uint8_t *Kp, uint8_t *Ki, uint8_t *Kd)
         if((gpio_get_level(SWJ) == 0) && pin_num == SWJ)
         {
             ESP_LOGW("pid","deleted");
-            vTaskDelete(encoder_handle);            
+            vTaskDelete(pid_handle);            
         }
 
         vTaskDelay(20 / portTICK_RATE_MS); 
     }
-}
-
-void kalman_callback()//uint8_t *temp)
-{
-    //To do more lately
 }
 
 void brightness_refresh()
