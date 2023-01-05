@@ -33,4 +33,18 @@ void motor_stop (uint8_t motor);
  * 
  */
 float motor_get_speed (void);
+
+/**
+ * @brief left motor PWM initiation
+ * 
+ * @return  ESP_OK - success / other - failure
+ */
+esp_err_t motor_L_init(void);
+
+/**
+ * @brief right motor PWM initiation
+ * 
+ * @return ESP_OK - success / other - failure 
+ */
+esp_err_t motor_R_init(void);
 #endif

@@ -24,11 +24,13 @@
 Quaternion q;           // [w, x, y, z]         quaternion container
 VectorFloat gravity;    // [x, y, z]            gravity vector
 float ypr[3];           // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector
+int16_t gyro[3];           // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector
 uint16_t packetSize = 42;    // expected DMP packet size (default is 42 bytes)
 uint16_t fifoCount;     // count of all bytes currently in FIFO
 uint8_t fifoBuffer[64]; // FIFO storage buffer
 uint8_t mpuIntStatus;   // holds actual interrupt status byte from MPU
 float pitch = 0u;
+float gyro_y = 0u;
 bool calibrated = 0u;
 float send_pitch;
 
@@ -60,7 +62,7 @@ void task_initI2C(void *ignore) {
 	vTaskDelete(NULL);
 }
 
-float mpu6050_read_angle()
+void mpu6050_read_angle(float* meas)
 {
 	mpuIntStatus = mpu.getIntStatus();
 	// get current FIFO count
@@ -77,18 +79,20 @@ float mpu6050_read_angle()
 		mpu.dmpGetQuaternion(&q, fifoBuffer);
 		mpu.dmpGetGravity(&gravity, &q);
 		mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
+		mpu.dmpGetGyro(gyro, fifoBuffer);
+		// printf("Gyro x: %d, y: %d, z: %d\n", gyro[0], gyro[1], gyro[2]);
 		//printf("YAW: %3.1f, ", ypr[0] * 180/M_PI);
 		//printf("PITCH: %3.1f, ", ypr[1] * 180/M_PI);
 		//printf("ROLL: %3.1f \n", ypr[2] * 180/M_PI);
 		pitch = ypr[1] * 180/M_PI;
+		meas[0] = pitch;
+		meas[1] = (float)gyro[1];
 		
 		/*uncomment to send current angle via ESP_NOW*/
 		// send_pitch = pitch;
 		// printf("send_pitch: %0.2f\n",send_pitch);
 		// esp_now_send(NULL, (uint8_t *)&send_pitch, sizeof(send_pitch));  
 	}
-
-	return pitch;
 }
 
 // void task_display(void*){

@@ -137,9 +137,9 @@ void encoder_task(void *pvParameter)
         curr_right_encoder_val = right_encoder.getValue();
         curr_left_encoder_val = left_encoder.getValue();
         last_right_speed = (1000*(curr_right_encoder_val-last_right_encoder_val))/((float)last_timer_val/800.0f);
-		last_right_speed = (60*last_right_speed)/PULSES_PER_WHEEL_REVOLUTION;
+		last_right_speed = (last_right_speed)/PULSES_PER_WHEEL_REVOLUTION;
         last_left_speed = (1000*(curr_left_encoder_val-last_left_encoder_val))/((float)last_timer_val/800.0f);
-        last_left_speed = (60*last_left_speed)/PULSES_PER_WHEEL_REVOLUTION;
+        last_left_speed = (last_left_speed)/PULSES_PER_WHEEL_REVOLUTION;
         taskEXIT_CRITICAL(&myMutex);
 
         

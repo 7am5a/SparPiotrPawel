@@ -5,4 +5,4 @@
  * 
  * @return pitch
  */
-float mpu6050_read_angle(void);
+void mpu6050_read_angle(float* meas);

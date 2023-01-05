@@ -30,21 +30,6 @@ static mcpwm_config_t pwm_config = {
     .counter_mode = MCPWM_UP_COUNTER,
 };
 
-/**
- * @brief left motor PWM initiation
- * 
- * @return  ESP_OK - success / other - failure
- */
-static esp_err_t motor_L_init(void);
-
-/**
- * @brief right motor PWM initiation
- * 
- * @return ESP_OK - success / other - failure 
- */
-static esp_err_t motor_R_init(void);
-
-
 void motor_control_task(void *pvParameter)
 {
     motor_L_init();
@@ -52,11 +37,11 @@ void motor_control_task(void *pvParameter)
 
     while (1)
     {
-        vTaskDelay(100/ portTICK_RATE_MS);
+        vTaskDelay(10/ portTICK_RATE_MS);
     }
 }
 
-static esp_err_t motor_L_init(void)
+esp_err_t motor_L_init(void)
 {
     esp_err_t ret = ESP_OK;
 
@@ -105,7 +90,7 @@ static esp_err_t motor_L_init(void)
     return ret;
 }
 
-static esp_err_t motor_R_init(void)
+esp_err_t motor_R_init(void)
 {
     esp_err_t ret = ESP_OK;
 

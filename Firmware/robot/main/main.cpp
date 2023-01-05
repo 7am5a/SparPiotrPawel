@@ -24,7 +24,9 @@ void app_main(void)
     xTaskCreate(&task_initI2C, "mpu_task", 8192, NULL, 5, NULL);
     // vTaskDelay(500/portTICK_PERIOD_MS);
     // xTaskCreate(&task_display, "disp_task", 8192, NULL, 5, NULL);
-    xTaskCreate(&motor_control_task, "motor_control_task", 4096, NULL, 5, NULL);
+    // xTaskCreate(&motor_control_task, "motor_control_task", 4096, NULL, 5, NULL);
+    motor_L_init();
+    motor_R_init();
     xTaskCreate(&pid_task, "pid_task", 4096, NULL, 5, NULL);
     xTaskCreate(&encoder_task, "encoder_task", 4096, NULL, 5, NULL);
 }
