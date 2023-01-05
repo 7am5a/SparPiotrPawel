@@ -22,18 +22,19 @@ extern int pin_num;
     level   1   sub_menu1_X     sub_menu2_X     NULL
     level   2   NULL            NULL            NULL
 */
-//             (*name,                          *next,          *prev,          *child,         *parent,        (*menu_function))
-menu_t menu1 = {"Manual control",               &menu2,         &menu4,         &sub_menu1_1,   NULL,           set_robot_control_task};
-    menu_t sub_menu1_1 = {"Now you can ride",   NULL,           &sub_menu1_1,   NULL,           &menu1,         NULL};
-menu_t menu2 = {"Choose algorithm",             &menu3,         &menu1,         &sub_menu2_1,   NULL,           NULL};
-    menu_t sub_menu2_1 = {"Default settings",   &sub_menu2_2,   &sub_menu2_3,   NULL,           &menu2,         default_callback};
-    menu_t sub_menu2_2 = {"PID",                &sub_menu2_3,   &sub_menu2_1,   &sub_menu2_2_1, &menu2,         set_pid_callback_task};
-        menu_t sub_menu2_2_1 ={"PID settings",  NULL,           &sub_menu2_2_1, NULL,           &sub_menu2_2,   NULL};
-    menu_t sub_menu2_3 = {"Kalman Filter",      NULL,           &sub_menu2_2,   NULL,           &menu2,         kalman_callback};
-menu_t menu3 = {"Settings",                     &menu4,         &menu2,         &sub_menu3_1,   NULL,           NULL};
-    menu_t sub_menu3_1 = {"Brightness",         NULL,           &sub_menu3_1,   NULL,           &menu3,         set_brightness_callback};
-menu_t menu4 = {"Battery",                      &menu1,         &menu3,         &sub_menu4_1,   NULL,           set_battery_callback};
-    menu_t sub_menu4_1 = {"Battery level",      &sub_menu4_1,   &sub_menu4_1,   NULL,           &menu4,         NULL};
+//             (*name,                              *next,          *prev,          *child,         *parent,        (*menu_function))
+menu_t menu1 = {"Manual control",                   &menu2,         &menu4,         &sub_menu1_1,   NULL,           set_robot_control_task};
+    menu_t sub_menu1_1 = {"Now you can ride",       NULL,           &sub_menu1_1,   NULL,           &menu1,         NULL};
+menu_t menu2 = {"Choose algorithm",                 &menu3,         &menu1,         &sub_menu2_1,   NULL,           NULL};
+    menu_t sub_menu2_1 = {"Default settings",       &sub_menu2_2,   &sub_menu2_3,   NULL,           &menu2,         default_callback};
+    menu_t sub_menu2_2 = {"State-Based",            &sub_menu2_3,   &sub_menu2_1,   &sub_menu2_2_1, &menu2,         set_state_based_callback_task};
+        menu_t sub_menu2_2_1 = {"Settings",         NULL,           &sub_menu2_2_1, NULL,           &sub_menu2_2,   NULL};
+    menu_t sub_menu2_3 = {"PID",                    &sub_menu2_1,   &sub_menu2_2,   &sub_menu2_3_1, &menu2,         set_pid_callback_task};
+        menu_t sub_menu2_3_1 = {"Settings",         NULL,           &sub_menu2_3_1, NULL,           &sub_menu2_3,   NULL};
+menu_t menu3 = {"Settings",                         &menu4,         &menu2,         &sub_menu3_1,   NULL,           NULL};
+    menu_t sub_menu3_1 = {"Brightness",             NULL,           &sub_menu3_1,   NULL,           &menu3,         set_brightness_callback};
+menu_t menu4 = {"Battery",                          &menu1,         &menu3,         &sub_menu4_1,   NULL,           set_battery_callback};
+    menu_t sub_menu4_1 = {"Battery level",          &sub_menu4_1,   &sub_menu4_1,   NULL,           &menu4,         NULL};
 
 //Current position address in menu
 menu_t *currentPointer = &menu1;

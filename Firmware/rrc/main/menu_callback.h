@@ -21,6 +21,18 @@ void set_robot_control_task();
 void default_callback();
 
 /**
+ * @brief Set the state based callback task object
+ * 
+ */
+void set_state_based_callback_task();
+
+/**
+ * @brief Set every single one part of State-Based filter in real time
+ * 
+ */
+void state_based_callback_task();
+
+/**
  * @brief Set the pid callback object
  * 
  */
@@ -34,13 +46,6 @@ void set_pid_callback_task();
  * @param Kd Derivative
  */
 void pid_callback_task();//uint8_t *Kp, uint8_t *Ki, uint8_t *Kd);
-
-/**
- * @brief Set every single one part of Kalman Filter in real time
- * 
- * @param temp 
- */
-void kalman_callback();//uint8_t *temp);
 
 /**
  * @brief Refresh and display changed value of brightness on screen

@@ -18,6 +18,7 @@ extern uint32_t adc_read;
 
 TaskHandle_t esp_now_handle;
 
+struct State_Based_data state_based_data;
 struct PID_data pid_data;
 
 //30 c6 f7 18 a0 d8 current chip
@@ -103,7 +104,15 @@ void init_esp_now()
 
 }
 
-void enc_send_now(float kp, float ki, float kd)//char param[3], int paramVal)
+void enc_state_based_send_now(float k1, float k2, float k3)
+{
+    state_based_data.K1 = k1;
+    state_based_data.K2 = k2;
+    state_based_data.K3 = k3;
+    esp_now_send(NULL, (uint8_t *)&state_based_data, sizeof(state_based_data));
+}
+
+void enc_pid_send_now(float kp, float ki, float kd)//char param[3], int paramVal)
 {        
     // //sprintf(send_buffer, "Hello from %s", mac_to_str(mac_buffer, (uint8_t *) sparkFun));
     // sprintf(send_buffer, "%s %d ", param, paramVal);
@@ -121,11 +130,15 @@ void joy_send_now(int xVal, int yVal)
     esp_now_send(NULL, (uint8_t *)send_buffer, strlen(send_buffer));
 }
 
-void reset_send_now(int kp, int ki, int kd)
+void reset_send_now(float k1, float k2, float k3, float kp, float ki, float kd)
 {
+    state_based_data.K1 = k1;    
+    state_based_data.K2 = k2;    
+    state_based_data.K3 = k1;    
     pid_data.Kp = kp;
-    pid_data.Kp = ki;
-    pid_data.Kp = kd;
+    pid_data.Ki = ki;
+    pid_data.Kd = kd;
     //sprintf(send_buffer, "Kp %d Ki %d Kd %d ", kp, ki, kd);
+    esp_now_send(NULL, (uint8_t *)&state_based_data, sizeof(state_based_data));
     esp_now_send(NULL, (uint8_t *)&pid_data, sizeof(pid_data));
 }
