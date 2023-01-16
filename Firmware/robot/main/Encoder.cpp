@@ -25,14 +25,8 @@
 
 #define TIMER_DIVIDER 100u
 
-static uint64_t last_timer_val;
-static int32_t last_right_encoder_val;
-static int32_t curr_right_encoder_val;
-static float last_right_speed;
-static int32_t last_left_encoder_val;
-static int32_t curr_left_encoder_val;
 static float last_left_speed;
-
+static float last_right_speed;
 
 portMUX_TYPE myMutex = portMUX_INITIALIZER_UNLOCKED;
 
@@ -41,6 +35,9 @@ Encoder::Encoder(gpio_num_t gpioPinA, gpio_num_t gpioPinB, pcnt_unit_t pcntUnit)
 	this->gpioPinB = gpioPinB;
 	this->pcntUnit = pcntUnit;
 }
+
+Encoder right_encoder(GPIO_NUM_34, GPIO_NUM_35, PCNT_UNIT_0);
+Encoder left_encoder(GPIO_NUM_36, GPIO_NUM_39, PCNT_UNIT_1);
 
 void Encoder::init() {
 	gpio_set_pull_mode(this->gpioPinA, GPIO_PULLUP_ONLY);
@@ -110,8 +107,12 @@ int32_t Encoder::getAddition() const {
 
 void encoder_task(void *pvParameter)
 {
-    Encoder right_encoder(GPIO_NUM_34, GPIO_NUM_35, PCNT_UNIT_0);
-	Encoder left_encoder(GPIO_NUM_36, GPIO_NUM_39, PCNT_UNIT_1);
+	static uint64_t last_timer_val;
+	static int32_t last_right_encoder_val;
+	static int32_t curr_right_encoder_val;
+	static int32_t last_left_encoder_val;
+	static int32_t curr_left_encoder_val;
+	
 
     right_encoder.init();
     left_encoder.init();
@@ -137,9 +138,9 @@ void encoder_task(void *pvParameter)
         curr_right_encoder_val = right_encoder.getValue();
         curr_left_encoder_val = left_encoder.getValue();
         last_right_speed = (1000*(curr_right_encoder_val-last_right_encoder_val))/((float)last_timer_val/800.0f);
-		last_right_speed = (last_right_speed)/PULSES_PER_WHEEL_REVOLUTION;
+		last_right_speed = (60*last_right_speed)/PULSES_PER_WHEEL_REVOLUTION;
         last_left_speed = (1000*(curr_left_encoder_val-last_left_encoder_val))/((float)last_timer_val/800.0f);
-        last_left_speed = (last_left_speed)/PULSES_PER_WHEEL_REVOLUTION;
+        last_left_speed = (60*last_left_speed)/PULSES_PER_WHEEL_REVOLUTION;
         taskEXIT_CRITICAL(&myMutex);
 
         
@@ -168,5 +169,34 @@ float encoder_get_speed(uint8_t motor)
 		break;
 	}
     
+	return ret_val;
+}
+
+float encoder_get_radian(uint8_t motor)
+{
+	static int32_t last_right_encoder_val;
+	static int32_t curr_right_encoder_val;
+	static int32_t last_left_encoder_val;
+	static int32_t curr_left_encoder_val;
+	float ret_val = 0;
+
+	curr_left_encoder_val = left_encoder.getValue();
+	curr_right_encoder_val = right_encoder.getValue();
+
+	switch (motor)
+	{
+	case MOTOR_LEFT:
+		ret_val = 360 * (curr_left_encoder_val)/PULSES_PER_WHEEL_REVOLUTION;
+		break;
+	case MOTOR_RIGHT:
+		ret_val = 360 * (curr_right_encoder_val)/PULSES_PER_WHEEL_REVOLUTION;
+		break;
+	default:
+		break;
+	}
+
+	last_left_encoder_val = curr_left_encoder_val;
+	last_right_encoder_val = curr_right_encoder_val;
+	
 	return ret_val;
 }

@@ -26,3 +26,9 @@ void encoder_task(void *pvParameter);
  * @return float 
  */
 float encoder_get_speed(uint8_t motor);
+
+/**
+ * @brief 
+ * 
+ */
+float encoder_get_radian(uint8_t motor);
