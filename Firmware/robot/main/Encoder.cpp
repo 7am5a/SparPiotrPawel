@@ -105,6 +105,11 @@ int32_t Encoder::getAddition() const {
 	return addition;
 }
 
+void Encoder::clear_pcnt()
+{
+	pcnt_counter_clear(this->pcntUnit);
+}
+
 void encoder_task(void *pvParameter)
 {
 	static uint64_t last_timer_val;
@@ -137,13 +142,15 @@ void encoder_task(void *pvParameter)
         timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0);
         curr_right_encoder_val = right_encoder.getValue();
         curr_left_encoder_val = left_encoder.getValue();
-        last_right_speed = (1000*(curr_right_encoder_val-last_right_encoder_val))/((float)last_timer_val/800.0f);
-		last_right_speed = (60*last_right_speed)/PULSES_PER_WHEEL_REVOLUTION;
-        last_left_speed = (1000*(curr_left_encoder_val-last_left_encoder_val))/((float)last_timer_val/800.0f);
-        last_left_speed = (60*last_left_speed)/PULSES_PER_WHEEL_REVOLUTION;
+        
+		// right_encoder.clear_pcnt();
+		// left_encoder.clear_pcnt();
         taskEXIT_CRITICAL(&myMutex);
 
-        
+        last_right_speed = (1000*(curr_right_encoder_val-last_right_encoder_val))/((float)last_timer_val/800.0f);
+		last_right_speed = (60 * last_right_speed)/PULSES_PER_WHEEL_REVOLUTION;
+        last_left_speed = (1000*(curr_left_encoder_val-last_left_encoder_val))/((float)last_timer_val/800.0f);
+        last_left_speed = (60 * last_left_speed)/PULSES_PER_WHEEL_REVOLUTION;
         last_right_encoder_val = curr_right_encoder_val;
         last_left_encoder_val = curr_left_encoder_val;
         //printf(">left_speed:%f\n", -last_left_speed);
@@ -172,31 +179,41 @@ float encoder_get_speed(uint8_t motor)
 	return ret_val;
 }
 
-float encoder_get_radian(uint8_t motor)
-{
-	static int32_t last_right_encoder_val;
-	static int32_t curr_right_encoder_val;
-	static int32_t last_left_encoder_val;
-	static int32_t curr_left_encoder_val;
-	float ret_val = 0;
+// float encoder_get_radian(uint8_t motor)
+// {
+// 	static int32_t last_right_encoder_val;
+// 	static int32_t curr_right_encoder_val;
+// 	static int32_t last_left_encoder_val;
+// 	static int32_t curr_left_encoder_val;
+// 	float ret_val = 0;
 
-	curr_left_encoder_val = left_encoder.getValue();
-	curr_right_encoder_val = right_encoder.getValue();
+// 	curr_left_encoder_val = left_encoder.getValue();
+// 	curr_right_encoder_val = right_encoder.getValue();
 
-	switch (motor)
-	{
-	case MOTOR_LEFT:
-		ret_val = 360 * (curr_left_encoder_val)/PULSES_PER_WHEEL_REVOLUTION;
-		break;
-	case MOTOR_RIGHT:
-		ret_val = 360 * (curr_right_encoder_val)/PULSES_PER_WHEEL_REVOLUTION;
-		break;
-	default:
-		break;
-	}
+// 	switch (motor)
+// 	{
+// 	case MOTOR_LEFT:
+// 		ret_val = 360 * (curr_left_encoder_val)/PULSES_PER_WHEEL_REVOLUTION;
+// 		if(360 <= ret_val || -360 >= ret_val)
+// 		{
 
-	last_left_encoder_val = curr_left_encoder_val;
-	last_right_encoder_val = curr_right_encoder_val;
+// 		}
+// 		break;
+// 	case MOTOR_RIGHT:
+// 		ret_val = 360 * (curr_right_encoder_val)/PULSES_PER_WHEEL_REVOLUTION;
+// 		if(360 <= ret_val || -360 >= ret_val)
+// 		{
+
+// 		}
+// 		break;
+// 	default:
+// 		break;
+// 	}
+
 	
-	return ret_val;
-}
+
+// 	last_left_encoder_val = curr_left_encoder_val;
+// 	last_right_encoder_val = curr_right_encoder_val;
+	
+// 	return ret_val;
+// }

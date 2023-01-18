@@ -1,6 +1,14 @@
 #ifndef ESP_NOW_DRV
 #define ESP_NOW_DRV
 
+struct State_feedback_vals
+{
+    float K1;
+    float K2;
+    float K3;
+    float K4;
+};
+
 /**
  * @brief Receive MAC address from chip
  * 

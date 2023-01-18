@@ -1,4 +1,4 @@
-idf_component_register(SRCS "SampleFilter.cpp" "Encoder.cpp" 
+idf_component_register(SRCS "state_feedback.cpp" "SampleFilter.cpp" "Encoder.cpp" 
                             "esp_now_drv.cpp"
                             "pid.cpp" 
                             "mpu6050_read_angle.cpp" 
