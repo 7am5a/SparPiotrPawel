@@ -179,41 +179,40 @@ float encoder_get_speed(uint8_t motor)
 	return ret_val;
 }
 
-// float encoder_get_radian(uint8_t motor)
-// {
-// 	static int32_t last_right_encoder_val;
-// 	static int32_t curr_right_encoder_val;
-// 	static int32_t last_left_encoder_val;
-// 	static int32_t curr_left_encoder_val;
-// 	float ret_val = 0;
+float encoder_get_radian(uint8_t motor)
+{
+	static int32_t last_right_encoder_val;
+	static int32_t curr_right_encoder_val;
+	static int32_t last_left_encoder_val;
+	static int32_t curr_left_encoder_val;
+	float ret_val = 0;
 
-// 	curr_left_encoder_val = left_encoder.getValue();
-// 	curr_right_encoder_val = right_encoder.getValue();
+	curr_left_encoder_val = left_encoder.getValue();
+	curr_right_encoder_val = right_encoder.getValue();
 
-// 	switch (motor)
-// 	{
-// 	case MOTOR_LEFT:
-// 		ret_val = 360 * (curr_left_encoder_val)/PULSES_PER_WHEEL_REVOLUTION;
-// 		if(360 <= ret_val || -360 >= ret_val)
-// 		{
+	switch (motor)
+	{
+	case MOTOR_LEFT:
+		ret_val = 360 * (curr_left_encoder_val)/PULSES_PER_WHEEL_REVOLUTION;
+		if(360 <= ret_val || -360 >= ret_val)
+		{
 
-// 		}
-// 		break;
-// 	case MOTOR_RIGHT:
-// 		ret_val = 360 * (curr_right_encoder_val)/PULSES_PER_WHEEL_REVOLUTION;
-// 		if(360 <= ret_val || -360 >= ret_val)
-// 		{
+		}
+		break;
+	case MOTOR_RIGHT:
+		ret_val = 360 * (curr_right_encoder_val)/PULSES_PER_WHEEL_REVOLUTION;
+		if(360 <= ret_val || -360 >= ret_val)
+		{
 
-// 		}
-// 		break;
-// 	default:
-// 		break;
-// 	}
+		}
+		break;
+	default:
+		break;
+	}
 
 	
-
-// 	last_left_encoder_val = curr_left_encoder_val;
-// 	last_right_encoder_val = curr_right_encoder_val;
+	last_left_encoder_val = curr_left_encoder_val;
+	last_right_encoder_val = curr_right_encoder_val;
 	
-// 	return ret_val;
-// }
+	return ret_val;
+}

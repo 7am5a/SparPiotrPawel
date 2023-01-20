@@ -1,8 +1,8 @@
 #pragma once
 
 /**
- * @brief reads pitch angle
+ * @brief 
  * 
- * @return pitch
+ * @return double 
  */
-void mpu6050_read_angle(float* meas);
+void mpu6050_get_angle(float *meas);

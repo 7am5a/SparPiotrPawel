@@ -5,7 +5,7 @@
 #include "driver/gpio.h"
 #include "esp_log.h"
 #include "sdkconfig.h"
-#include "mpu6050_read_angle.h"
+
 #include "motor_control.h"
 #include <math.h>
 #include "driver/gpio.h"
@@ -18,25 +18,34 @@
 #include "state_feedback.h"
 #include "pid.h"
 
-#define FILTER_ELEMENTS_NUMBER 30
+extern "C" {
+	#include "mpu6050_read_angle.h"
+    #include "MPU6050.h"
+}
 
-extern bool calibrated;
+#define FILTER_ELEMENTS_NUMBER 10
+#define STATE_FEEDBACK_RATE 10
 
-Data_state_packed data_state_packed;
-extern State_feedback_vals state_feedback_vals;
 float filter_values[FILTER_ELEMENTS_NUMBER];
 float sorted_values[FILTER_ELEMENTS_NUMBER];
+static float filtered_robot_angle;
+static float wheel_angle = 0; //[deg] negative
+
+Data_state_packed data_state_packed;
+SampleFilter sample_filter;
+extern State_feedback_vals state_feedback_vals;
+
 
 void state_feedback_task(void *pvParameter)
 {
-  while(1)
-  {
-      if(calibrated)
-      {
+    SampleFilter_init(&sample_filter);
+    mpu6050_init();
+    while(1)
+    {
         state_feedback_controller();
-      }
-      vTaskDelay(10/portTICK_PERIOD_MS);
-  }
+
+        vTaskDelay(STATE_FEEDBACK_RATE/portTICK_PERIOD_MS);
+    }
 }
 
 int compare (const void * a, const void * b)
@@ -47,19 +56,28 @@ int compare (const void * a, const void * b)
 
 void state_feedback_controller()
 {
-    static float meas[2];
     static float output;
+    static float a = 0.99; //lowpass filter constant
+    static float meas[2];
     static float left_speed;
     static float right_speed;
     static float robot_angle; //[deg] positive
-    static float wheel_angle = 0; //[deg] negative
     static float robot_angle_speed; //[deg/s] negative
     static float wheel_angle_speed; //[RPM] negative
 
-    mpu6050_read_angle(meas);
+    mpu6050_get_angle(meas);
+
     robot_angle = meas[0];
     robot_angle_speed = meas[1];
 
+    /*FIR lowpass filter*/
+    // SampleFilter_put(&sample_filter, (double)robot_angle);
+    // robot_angle = SampleFilter_get(&sample_filter);
+
+    /*IIR lowpass filter*/
+    filtered_robot_angle = ((1-a) * filtered_robot_angle) + (robot_angle * a);
+
+    /*Median*/
     // for(int i = FILTER_ELEMENTS_NUMBER-1; i > 0; i--)
     // {
     //     filter_values[i] = filter_values[i-1];
@@ -70,25 +88,25 @@ void state_feedback_controller()
     // qsort(sorted_values, FILTER_ELEMENTS_NUMBER, sizeof(float), compare);
     // robot_angle = sorted_values[FILTER_ELEMENTS_NUMBER/2];
 
-    // wheel_angle = (-encoder_get_radian(1u) + encoder_get_radian(0u))/2; //to repair
+    wheel_angle = ((-encoder_get_radian(1u) + encoder_get_radian(0u))/2); //repair
     
     left_speed = encoder_get_speed(0u);
     right_speed = -encoder_get_speed(1u);
     wheel_angle_speed = ((left_speed + right_speed)/2);
 
-    printf(">robot_angle:%f\n>robot_angle_speed:%f\n>wheel_angle:%f\n>wheel_angle_speed:%f\n", robot_angle, robot_angle_speed, wheel_angle, wheel_angle_speed);
+    // printf(">robot_angle:%f\n>robot_angle_speed:%f\n>wheel_angle:%f\n>wheel_angle_speed:%f\n", robot_angle, robot_angle_speed, wheel_angle, wheel_angle_speed);
 
     data_state_packed.left_speed = left_speed;
     data_state_packed.right_speed = right_speed;
-    data_state_packed.robot_angle = robot_angle;
+    data_state_packed.robot_angle = filtered_robot_angle;
     data_state_packed.robot_angle_speed = robot_angle_speed;
     data_state_packed.wheel_angle = wheel_angle;
     data_state_packed.wheel_angle_speed = wheel_angle_speed;
 
     if(70 > robot_angle && -70 < robot_angle)
     {
-    // output = (-(0* wheel_angle) - (15 * robot_angle) - (0 * wheel_angle_speed) + (0 * robot_angle_speed));
-    output = (-(state_feedback_vals.K1 * wheel_angle) - (state_feedback_vals.K2 * robot_angle) 
+    // output = (-(0* wheel_angle) + (8 * filtered_robot_angle) - (0 * wheel_angle_speed) + (2 * robot_angle_speed));
+    output = (-(state_feedback_vals.K1 * wheel_angle) + (state_feedback_vals.K2 * filtered_robot_angle) 
         - (state_feedback_vals.K3 * wheel_angle_speed) + (state_feedback_vals.K4 * robot_angle_speed));
     
     if(750 < output)
@@ -119,7 +137,7 @@ void state_feedback_controller()
         data_state_packed.set_speed = 0.0f;
     }
 
-    // esp_now_send(NULL, (uint8_t *)&data_state_packed, sizeof(data_state_packed));  
+    esp_now_send(NULL, (uint8_t *)&data_state_packed, sizeof(data_state_packed));  
 }
 
 float state_feedback_motor_stop(uint8_t motor)

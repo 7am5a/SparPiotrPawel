@@ -18,6 +18,7 @@ extern uint32_t adc_read;
 
 TaskHandle_t esp_now_handle;
 State_feedback_vals state_feedback_vals;
+PID_vals pid_data;
 
 //30 c6 f7 18 a0 d8 current chip
 //58:bf:25:91:d1:e4 test

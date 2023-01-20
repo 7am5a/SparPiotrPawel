@@ -9,6 +9,13 @@ struct State_feedback_vals
     float K4;
 };
 
+struct PID_vals
+{
+    float Kp;
+    float Ki;
+    float Kd;
+};
+
 /**
  * @brief Receive MAC address from chip
  * 

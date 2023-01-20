@@ -11,16 +11,16 @@ sampling frequency: 100 Hz
 * 0 Hz - 10 Hz
   gain = 1
   desired ripple = 5 dB
-  actual ripple = 0.00025711532314909665 dB
+  actual ripple = 6.73340759652856 dB
 
-* 40 Hz - 50 Hz
+* 20 Hz - 50 Hz
   gain = 0
-  desired attenuation = -40 dB
-  actual attenuation = -124.04747396899853 dB
+  desired attenuation = -45 dB
+  actual attenuation = -41.105687178116376 dB
 
 */
 
-#define SAMPLEFILTER_TAP_NUM 100
+#define SAMPLEFILTER_TAP_NUM 10
 
 typedef struct {
   double history[SAMPLEFILTER_TAP_NUM];

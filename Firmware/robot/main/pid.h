@@ -2,7 +2,6 @@
 
 struct __attribute__((__packed__)) Data_packed
 {
-  float angle;
   float set_speed;
   float right_speed;
   float left_speed;

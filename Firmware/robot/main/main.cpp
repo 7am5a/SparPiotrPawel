@@ -10,6 +10,7 @@
 #include "pid.h"
 #include "Encoder.h"
 #include "state_feedback.h"
+#include "esp_now_drv.h"
 
 
 
@@ -17,15 +18,16 @@ extern "C" {
 	void app_main(void);
 }
 
-extern void task_initI2C(void*);
+
+
 // extern void task_display(void*);
 
 
 void app_main(void)
 {
-    xTaskCreate(&task_initI2C, "mpu_task", 8192, NULL, 5, NULL);
     motor_L_init();
     motor_R_init();
+    init_esp_now();
     xTaskCreate(&pid_task, "pid_task", 4096, NULL, 5, NULL);
     xTaskCreate(&encoder_task, "encoder_task", 4096, NULL, 5, NULL);
     xTaskCreate(&state_feedback_task, "state_feedback_task", 8192, NULL, 5, NULL);
