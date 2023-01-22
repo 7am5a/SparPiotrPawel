@@ -19,12 +19,16 @@ extern "C" {
 }
 
 
-
+extern void task_initI2C(void*);
+extern void task_display(void*);
 // extern void task_display(void*);
 
 
 void app_main(void)
 {
+    xTaskCreate(&task_initI2C, "mpu_task", 2048, NULL, 5, NULL);
+    vTaskDelay(500/portTICK_PERIOD_MS);
+    xTaskCreate(&task_display, "disp_task", 8192, NULL, 5, NULL);
     motor_L_init();
     motor_R_init();
     init_esp_now();

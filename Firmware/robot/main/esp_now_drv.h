@@ -3,10 +3,10 @@
 
 struct State_feedback_vals
 {
-    float K1;
-    float K2;
-    float K3;
-    float K4;
+    float K1 = 0.0f;
+    float K2 = 20.2f;
+    float K3 = 0.0f;
+    float K4 = 1.7f;
 };
 
 struct PID_vals

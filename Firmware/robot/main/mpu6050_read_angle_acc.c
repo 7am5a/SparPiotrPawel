@@ -2,9 +2,9 @@
 #include "esp_log.h"
 #include "driver/i2c.h"
 #include "esp_err.h"
-#include "MPU6050.h"
+#include "mpu6050_acc.h"
 #include "math.h"
-#include "mpu6050_read_angle.h"
+#include "mpu6050_read_angle_acc.h"
 
 // extern "C" {
 // 	void mpu6050_init(void);
@@ -27,7 +27,7 @@ static float maxVal = 16383;//32767;//65535;//16383;
 static float minOut = -90;
 static float maxOut = 90;
 
-void mpu6050_get_angle(float *meas)
+void mpu6050_acc_read(float *meas)
 {
     read_raw(accel, gyro);
 

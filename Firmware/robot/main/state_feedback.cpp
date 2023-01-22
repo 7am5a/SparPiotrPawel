@@ -17,10 +17,11 @@
 #include "esp_now.h"
 #include "state_feedback.h"
 #include "pid.h"
+#include "mpu6050_read_pitch.h"
 
 extern "C" {
-	#include "mpu6050_read_angle.h"
-    #include "MPU6050.h"
+	#include "mpu6050_read_angle_acc.h"
+    #include "MPU6050_acc.h"
 }
 
 #define FILTER_ELEMENTS_NUMBER 10
@@ -30,6 +31,8 @@ float filter_values[FILTER_ELEMENTS_NUMBER];
 float sorted_values[FILTER_ELEMENTS_NUMBER];
 static float filtered_robot_angle;
 static float wheel_angle = 0; //[deg] negative
+
+extern bool calibrated;
 
 Data_state_packed data_state_packed;
 SampleFilter sample_filter;
@@ -42,8 +45,10 @@ void state_feedback_task(void *pvParameter)
     mpu6050_init();
     while(1)
     {
-        state_feedback_controller();
-
+        if(calibrated)
+        {
+            state_feedback_controller();
+        }
         vTaskDelay(STATE_FEEDBACK_RATE/portTICK_PERIOD_MS);
     }
 }
@@ -58,24 +63,26 @@ void state_feedback_controller()
 {
     static float output;
     static float a = 0.99; //lowpass filter constant
-    static float meas[2];
+    static float meas_acc[2];
+    static float meas_pitch[2];
     static float left_speed;
     static float right_speed;
     static float robot_angle; //[deg] positive
     static float robot_angle_speed; //[deg/s] negative
     static float wheel_angle_speed; //[RPM] negative
 
-    mpu6050_get_angle(meas);
+    mpu6050_acc_read(meas_acc);
+    mpu6050_pitch_read(meas_pitch);
 
-    robot_angle = meas[0];
-    robot_angle_speed = meas[1];
+    robot_angle = 0.1 * meas_acc[0] - 0.9 * meas_pitch[0];
+    robot_angle_speed = meas_acc[1];
 
     /*FIR lowpass filter*/
     // SampleFilter_put(&sample_filter, (double)robot_angle);
     // robot_angle = SampleFilter_get(&sample_filter);
 
     /*IIR lowpass filter*/
-    filtered_robot_angle = ((1-a) * filtered_robot_angle) + (robot_angle * a);
+    // filtered_robot_angle = ((1-a) * filtered_robot_angle) + (robot_angle * a);
 
     /*Median*/
     // for(int i = FILTER_ELEMENTS_NUMBER-1; i > 0; i--)
@@ -94,19 +101,19 @@ void state_feedback_controller()
     right_speed = -encoder_get_speed(1u);
     wheel_angle_speed = ((left_speed + right_speed)/2);
 
-    // printf(">robot_angle:%f\n>robot_angle_speed:%f\n>wheel_angle:%f\n>wheel_angle_speed:%f\n", robot_angle, robot_angle_speed, wheel_angle, wheel_angle_speed);
+    //printf(">acc_angle:%f\n>pitch_angle:%f\n>robot_angle:%f\n>robot_angle_speed:%f\n>wheel_angle:%f\n>wheel_angle_speed:%f\n",meas_acc[0], meas_pitch[0], robot_angle, robot_angle_speed, wheel_angle, wheel_angle_speed);
 
     data_state_packed.left_speed = left_speed;
     data_state_packed.right_speed = right_speed;
-    data_state_packed.robot_angle = filtered_robot_angle;
+    data_state_packed.robot_angle = robot_angle;
     data_state_packed.robot_angle_speed = robot_angle_speed;
     data_state_packed.wheel_angle = wheel_angle;
     data_state_packed.wheel_angle_speed = wheel_angle_speed;
 
     if(70 > robot_angle && -70 < robot_angle)
     {
-    // output = (-(0* wheel_angle) + (8 * filtered_robot_angle) - (0 * wheel_angle_speed) + (2 * robot_angle_speed));
-    output = (-(state_feedback_vals.K1 * wheel_angle) + (state_feedback_vals.K2 * filtered_robot_angle) 
+    // output = (-(0* wheel_angle) + (20.2 * filtered_robot_angle) - (0 * wheel_angle_speed) + (1.7 * robot_angle_speed));
+    output = (-(state_feedback_vals.K1 * wheel_angle) + (state_feedback_vals.K2 * robot_angle) 
         - (state_feedback_vals.K3 * wheel_angle_speed) + (state_feedback_vals.K4 * robot_angle_speed));
     
     if(750 < output)

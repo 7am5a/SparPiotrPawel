@@ -5,4 +5,4 @@
  * 
  * @return double 
  */
-void mpu6050_get_angle(float *meas);
+void mpu6050_acc_read(float *meas);
